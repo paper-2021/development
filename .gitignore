@@ -137,3 +137,6 @@ temp/
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/vscode,node
+
+# greengrass lambda 생성 시 필요한 함수
+rsu/greengrasssdk/*
