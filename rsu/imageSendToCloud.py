@@ -1,26 +1,22 @@
-# import sys
-# from threading import Timer
-# import os
 import requests
-
-volumePath = '/dest/Imgtest/'
-url = 'http://3.35.184.173:8000/image' # image 경로 수정
+import json
 
 def function_handler(event, context):
+    imagePath = '/dest/Imgtest/1_test.jpg' # image 경로 수정 필요
+    url = 'http://3.35.184.173:8000/image' 
     try:
         import requests
         headers = {
-            'accept': 'application/json',
-            'Content-Type': 'multipart/form-data',
+            'accept': 'application/json'
         }
-        params = ( 
-            ('anormaly_type', '1')
-        )
         files = {
-            'form': (open(volumePath + 'testImage.jpg', 'rb'),'image/jpg'),
+            'file': open(imagePath, 'rb')
         }
-        response = requests.post(url, headers=headers, params=params, files=files)
+        response = requests.post(url, headers=headers, files=files)
         print (response.json())
     except Exception as e :
         print("Imgtest err : ", e)
-    return
+    return {
+        'statusCode' : 200,
+        'body' : json.dumps('Image upload success')
+    }
