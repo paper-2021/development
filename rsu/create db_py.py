@@ -4,13 +4,14 @@ import platform
 import os
 import logging
 
+sys.path.append('/src/LRAtest')
 # Setup logging to stdout
 logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 # Create a Greengrass Core SDK client.
 client = greengrasssdk.client('iot-data')
-volumePath = '/dest/LRAtest'
+volumePath = '/src/LRAtest'
 # /dest/DB -> ~/DB
 
     
@@ -34,9 +35,9 @@ def function_handler(event, context):
             output.write("""import sqlite3
 import sys
 
-sys.stdout = open('output.txt', 'w')
+sys.stdout = open('/src/LRAtest/output.txt', 'w')
 
-conn = sqlite3.connect('check.db')
+conn = sqlite3.connect('/src/LRAtest/check.db')
 cur = conn.cursor()
 cur.execute("CREATE TABLE RSU(rsu_id INTEGER PRIMARY KEY, rsu_ip TEXT);")
 cur.execute("CREATE TABLE NearRSU(rsu_id INTEGER PRIMARY KEY, FOREIGN KEY(rsu_id) REFERENCES RSU(rsu_id));")
@@ -47,18 +48,12 @@ cur.close()
 conn.close()""")
         client.publish(topic='DB/test', payload="complete make db file")
         
-        with open(volumePath + '/create_db', 'r') as myfile:
+        with open(volumePath + '/create_db.py', 'r') as myfile:
             data = myfile.read()
         client.publish(topic='DB/test', payload=data)
-
-        # 파이썬 파일 실행
-        os.system("sudo python"+ volumePath + '/3version.py')
-        client.publish(topic='DB/test', payload="complete compile")
         
-        #output 파일 확인
-        with open(volumePath + '/output.txt', 'r') as myfile:
-            data = myfile.read()
-        client.publish(topic='DB/test', payload='output.txt: '+data)
+        import create_db
+        
         
     except Exception as e:
         client.publish(topic='DB/test', payload='Error: '+str(e))
