@@ -13,12 +13,12 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 client = greengrasssdk.client('iot-data')
 volumePath = '/src/LRAtest'
 # /dest/DB -> ~/DB
-code =""" import sqlite3
+code ="""import sqlite3
 import sys
 
-sys.stdout = open('output.txt', 'w')
+sys.stdout = open('/src/LRAtest/output.txt', 'w')
 
-conn = sqlite3.connect('check.db')
+conn = sqlite3.connect('/src/LRAtest/check.db')
 cur = conn.cursor()
 
 try:
@@ -33,7 +33,7 @@ except sqlite3.OperationalError:
 
 # 데이터 베이스에 집어 넣는 프로그램
 def insert_db(table, data):
-    conn = sqlite3.connect('check.db')
+    conn = sqlite3.connect('/src/LRAtest/check.db')
     cur = conn.cursor()
     cur.execute("INSERT INTO " + table + " VALUES " + data)
     conn.commit()
@@ -42,10 +42,10 @@ def insert_db(table, data):
     return "Sucessfully insert the data in " + table
 
 def select_db(table):
-    conn = sqlite3.connect('check.db')
+    conn = sqlite3.connect('/src/LRAtest/check.db')
     cur = conn.cursor()
     cur.execute("SELECT * from " + table)
-    return cur.fetchall()"""
+    return str(cur.fetchall())"""
     
 def function_handler(event, context):
     client.publish(topic='DB/test', payload='Start lambda function')

@@ -1,8 +1,6 @@
 # 데이터 베이스를 생성해서 output을 output.txt에 넣는 코드
 import sqlite3
-import sys
 
-sys.stdout = open('output.txt', 'w')
 
 conn = sqlite3.connect('check.db')
 cur = conn.cursor()
@@ -31,7 +29,7 @@ def select_db(table):
     conn = sqlite3.connect('check.db')
     cur = conn.cursor()
     cur.execute("SELECT * from " + table)
-    return cur.fetchall()
+    return str(cur.fetchall())
 """
 print(select_db('RSU'))
 print(insert_db('RSU', "(1234, '192.168.195')"))
