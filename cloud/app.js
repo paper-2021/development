@@ -7,6 +7,7 @@ const port = 8000
 app.use(express.static('public'));
 
 app.post('/image', upload, (req, res) => {
+    console.log("Image upload success")
     res.status(200).json({'msg' : 'Image upload success'})
 })
 
