@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
         cb(null, 'public/upload/' + type) // file save path(backend/upload)
     },
     filename: async function(req, file, cb) {
-        console.log(file.originalname)
+        console.log('file name : ', file.originalname)
         cb(null, await datetimeTight() + '_' + file.originalname) // 저장되는 file명
     }
 })
