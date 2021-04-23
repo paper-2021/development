@@ -92,9 +92,10 @@ class Node():
         ids.append(n.id)
         ids = reversed(ids)
 
+        route = []
         for i in ids:
-            print(str(i), end= ' ')
-        print()
+            route.append(i)
+        print(route)
 
 n0 = Node(0)
 n1 = Node(4)
