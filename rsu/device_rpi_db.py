@@ -185,8 +185,14 @@ while True:
         message['sequence'] = loopCount
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(topic, messageJson, 0)
-        myAWSIoTMQTTClient.publish('test/select', "RSU", 0)
-        myAWSIoTMQTTClient.publish('test/insert', "{RSU: (1234, '192.168.195', 1)}", 0)
+        message = []
+        message.append('RSU')
+        messageJson = json.dumps(message)
+        myAWSIoTMQTTClient.publish('test/select', messageJson, 0)
+        message = {}
+        message['RSU'] = "(1234, '192.168.195', 1)"
+        messageJson = json.dumps(message)
+        myAWSIoTMQTTClient.publish('test/insert', messageJson, 0)
         if args.mode == 'publish':
             print('Published topic %s: %s\n' % (topic, messageJson))
         loopCount += 1
