@@ -6,7 +6,7 @@ conn = sqlite3.connect('check.db')
 cur = conn.cursor()
 
 try:
-    cur.execute("CREATE TABLE RSU(rsu_id INTEGER PRIMARY KEY, rsu_ip TEXT, location TEXT);")
+    cur.execute("CREATE TABLE RSU(rsu_id INTEGER PRIMARY KEY, start INTEGER, end INTEGER, start_latitude TEXT, start_longitude TEXT, end_latitude TEXT, end_logitude TEXT,);")
     cur.close()
     conn.close()
 except sqlite3.OperationalError:
