@@ -1,5 +1,5 @@
 import heapq  
-
+import time
 global graph_ver3
 graph_ver3 = {}
 global path_dict 
@@ -28,31 +28,27 @@ class Node():
     def __str__(self):
         return self.id
     
+    def dijkstra(self, graph, path_dict, start, end):
+      distances = {node: float('inf') for node in graph}  
+      distances[start] = 0  
+      queue = []
+      heapq.heappush(queue, [distances[start], start])
 
-def dijkstra(graph, start, path_dict):
-  distances = {node: float('inf') for node in graph}  
-  distances[start] = 0  
-  queue = []
-  heapq.heappush(queue, [distances[start], start])
+      while queue: 
+        current_distance, current_destination = heapq.heappop(queue)  
 
-  while queue:  # queue에 남아 있는 노드가 없으면 끝
-    current_distance, current_destination = heapq.heappop(queue)  
-
-    if distances[current_destination] < current_distance: 
-      continue
-    
-    for new_destination, new_distance in graph[current_destination].items():
-      distance = current_distance + new_distance  
-      if distance < distances[new_destination]:  
-        distances[new_destination] = distance
-        path_dict[new_destination] = path_dict[current_destination] + [current_destination]
-        heapq.heappush(queue, [distance, new_destination]) 
-    
-  return distances, path_dict
-
-
-# 이부분에 하면 Aster의 Node와 addBranch 길찾기 실행 가능
-
-dijkstra(graph_ver3, '21', path_dict)
-print(path_dict['3'])
-
+        if distances[current_destination] < current_distance: 
+          continue
+        
+        for new_destination, new_distance in graph[current_destination].items():
+          distance = current_distance + new_distance  
+          if distance < distances[new_destination]:  
+            distances[new_destination] = distance
+            path_dict[new_destination] = path_dict[current_destination] + [current_destination]
+            heapq.heappush(queue, [distance, new_destination]) 
+        
+      return path_dict[end]
+start = time.time()
+result = n0.dijkstra(graph_ver3, path_dict, '65', '39')
+print(result)
+print("Dijstra time: "+ str(time.time()-start))
