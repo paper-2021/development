@@ -1,30 +1,27 @@
 from collections import deque
 import heapq
+from haversine import haversine
+import time
 
-idCounter = -1
+idCounter = 0
 
 class Edge:
-        def __init__(self, weight, node):
-            self.weight = weight
-            self.node = node
+    def __init__(self, weight, traffic, node):
+        self.weight = weight
+        self.traffic = traffic
+        self.node = node
+
 class Node():
+    parent = None
     
-    # Id for readability of result purposes
-     #private static int 
+    f = 0; 
+    g = 0; 
     
-    # Parent in the path
-    parent = None # public Node , null
-    
-    # Evaluation functions
-    f = 0; #public double, Double.MAX_VALUE
-    g = 0; #public double
-    
-    # Hardcoded heuristic
-    # public double 
-    def __init__(self, h):
+    def __init__(self, latitude, longitude):
         global idCounter
         idCounter = idCounter + 1
-        self.h = h
+        self.latitude = latitude
+        self.longitude = longitude
         self.id = idCounter
         self.neighbors = []
         self.parent = None
@@ -37,19 +34,21 @@ class Node():
     def __repr__(self):
         return  ("Node " + str(self.id))
     
-    def __lt(self, other):
-        return (self.f).__lt__(other.f)
-    
     def __gt__(self, other):
         return (self.f).__gt__(other.f)
 
-
-    def addBranch(self, weight, node):
-        newEdge = Edge(weight, node)
+    def addBranch(self, weight, traffic, node):
+        newEdge = Edge(weight, traffic, node)
         self.neighbors.append(newEdge)
+
+    def changeBranch(self, traffic, node) :
+        for neighbor in self.neighbors :
+            if(neighbor.node == node) :
+                neighbor.traffic = traffic
+                break
     
     def calculateHeuristic(self, target):
-        return self.h
+        return haversine((self.longitude, self.latitude), (target.longitude, target.latitude)) * 10
 
     def aStar(self, start, target):
         closedList = []
@@ -63,7 +62,7 @@ class Node():
                 return n
             for edge in n.neighbors:
                 m = edge.node
-                totalWeight = n.g + edge.weight
+                totalWeight = n.g + edge.weight/edge.traffic
                 if(m not in openList and m not in closedList):
                     m.parent = n
                     m.g = totalWeight
@@ -96,70 +95,3 @@ class Node():
         for i in ids:
             route.append(i)
         print(route)
-
-n0 = Node(0)
-n1 = Node(4)
-n2 = Node(3)
-n3 = Node(2)
-n4 = Node(3)
-n5 = Node(2)
-n6 = Node(1)
-n7 = Node(2)
-n8 = Node(1)
-n9 = Node(0)
-
-n1.addBranch(0, n2)
-n1.addBranch(0, n4)
-
-
-n2.addBranch(0, n1)
-n2.addBranch(0, n3)
-n2.addBranch(0, n5)
-
-n3.addBranch(0, n2)
-n3.addBranch(0, n6)
-
-n4.addBranch(0, n1)
-n4.addBranch(0, n5)
-n4.addBranch(0, n7)
-
-n5.addBranch(0, n2)
-n5.addBranch(0, n4)
-n5.addBranch(0, n8)
-n5.addBranch(0, n6)
-
-n6.addBranch(0, n3)
-n6.addBranch(0, n5)
-n6.addBranch(0, n9)
-
-n7.addBranch(0, n4)
-n7.addBranch(0, n8)
-
-n8.addBranch(0, n7)
-n8.addBranch(0, n5)
-n8.addBranch(0, n9)
-
-n9.addBranch(0, n8)
-n9.addBranch(0, n6)
-
-res = Node(0)
-
-res1 = res.aStar(n1, n2)
-res2 = res.aStar(n1, n3)
-res3 = res.aStar(n1, n4)
-res4 = res.aStar(n1, n5)
-res5 = res.aStar(n1, n6)
-res6 = res.aStar(n1, n7)
-res7 = res.aStar(n1, n8)
-res8 = res.aStar(n1, n9)
-
-res.printPath(res1)
-res.printPath(res2)
-res.printPath(res3)
-res.printPath(res4)
-res.printPath(res5)
-res.printPath(res6)
-res.printPath(res7)
-res.printPath(res8)
-
-
