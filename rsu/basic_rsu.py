@@ -53,72 +53,87 @@ def customOnMessage(message):
    #  print('Received message on topic %s: %s\n' % (message.topic, message.payload))
     subscribe_topic = message.topic
     payload = json.loads(message.payload)
-    if(subscribe_topic == str(rsu_id) + '/trigger/rsu/anomaly') :
-        print('=============%d/trigger/rsu/anomaly=============' %(rsu_id))
-        # 1. send image to cloud
-        from send_image import sendImage
-        sendImage_result = sendImage() # parameter : image name
-        print('sendImage_result : ', sendImage_result)
-        # 2. insert into RSUState
-        result = rsu_db.insert_anomaly(rsu_id, payload['accident_type'], payload['accident_size'])
-        print('insert_anomaly result : ', result)
-        # 3. send anormaly info to near rsu - mqtt publish(n/rsu/anormaly)
-        near_rsu = rsu_db.select_near_rsu() # select near rsu
-        for i in near_rsu :
-            publish_topic.append(str(i) + '/rsu/anomaly')
+
+    topic_split = subscribe_topic.split('/')
+    rsu = topic_split[0]
+    print('RSU #', rsu)
+
+    if(len(topic_split) == 4) : # trigger - 자신한테 일어나는 경우
+        if(topic_split[2] == 'rsu') : # /trigger/rsu/anomaly
+            print('trigger/rsu/anomaly')
+            # 1. send image to cloud
+            from send_image import sendImage
+            sendImage_result = sendImage() # parameter : image name
+            print('sendImage_result : ', sendImage_result)
+            # 2. insert into RSUState
+            result = rsu_db.insert_anomaly(rsu, payload['accident_type'], payload['accident_size'])
+            print('insert_anomaly result : ', result)
+            # 3. send anormaly info to near rsu - mqtt publish(n/rsu/anormaly)
+            near_rsu = rsu_db.select_near_rsu(rsu) # select near rsu
+            for i in near_rsu :
+                publish_topic.append(str(i) + '/rsu/anomaly')
+                message = {}
+                message['rsu_id'] = rsu
+                message['accident_type'] = payload['accident_type']
+                message['accident_size'] = payload['accident_size']
+                messageJson = json.dumps(message)
+                publish_msg.append(messageJson)
+
+        elif(topic_split[2] == 'obu') : # /trigger/obu/register
+            print('trigger/obu/register')
+            # 1. calculate path
+            # start = int(thingName)
+            # destination = payload['destination']
+            # path = pathfind(start, destination)
+            path = '1, 2, 3, 4'
+            # 2. insert into OBU(obu id & path)
+            result = rsu_db.register_obu(rsu, payload['obu_id'], path)
+            print('register_obu result : ', result)
+            # 3. send obu info to next rsu - mqtt publish (obu/register)
+            next_rsu = 2 # find next rsu in path
+            tmp = str(next_rsu) + '/obu/register'
+            publish_topic.append(tmp)
             message = {}
-            message['rsu_id'] = rsu_id
-            message['accident_type'] = payload['accident_type']
-            message['accident_size'] = payload['accident_size']
+            message['obu_id'] = payload['obu_id']
+            message['path'] = path
             messageJson = json.dumps(message)
             publish_msg.append(messageJson)
-    elif(subscribe_topic == str(rsu_id) + '/trigger/obu/register') :
-        print('=============%d/trigger/obu/register=============' %(rsu_id))
-        # 1. calculate path
-        # start = int(thingName)
-        # destination = payload['destination']
-        # path = pathfind(start, destination)
-        path = '1, 2, 3, 4'
-        # 2. insert into OBU(obu id & path)
-        result = rsu_db.register_obu(payload['obu_id'], path)
-        print('register_obu result : ', result)
-        # 3. send obu info to next rsu - mqtt publish (obu/register)
-        next_rsu = 2 # find next rsu in path
-        tmp = str(next_rsu) + '/obu/register'
-        publish_topic.append(tmp)
-        message = {}
-        message['obu_id'] = payload['obu_id']
-        message['path'] = path
-        messageJson = json.dumps(message)
-        publish_msg.append(messageJson)
-    elif(subscribe_topic == str(rsu_id) + '/rsu/anomaly') :
-        print('=============%d/rsu/anomaly=============' %(rsu_id))
-        # 1. insert into RSUState
-        result = rsu_db.insert_anomaly(payload['rsu_id'], payload['accident_type'], payload['accident_size'])
-        print('insert_anomaly result : ', result)
-    elif(subscribe_topic == str(rsu_id) + '/obu/register') :
-        print('=============%d/obu/register=============' %(rsu_id))
-        path = payload['path']
-        # 1. check anormaly table - if anormaly in path, recalculate path
-        result = rsu_db.check_anomaly(path)
-        print('check_anomaly result : ', result)
+
+    elif(len(topic_split) == 3) : # 주변 RSU로 부터 전달받는 경우
+        if(topic_split[1] == 'rsu') : # /rsu/anomaly
+            print('rsu/anomaly')
+            # 1. insert into RSUState
+            result = rsu_db.insert_anomaly(rsu, payload['rsu_id'], payload['accident_type'], payload['accident_size'])
+            print('insert_anomaly result : ', result)
+
+        elif(topic_split[1] == 'obu') : # /obu/register
+            print('obu/register')
+            path = payload['path']
+            # 1. check anormaly table - if anormaly in path, recalculate path
+            result = rsu_db.check_anomaly(rsu, path)
+            print('check_anomaly result : ', result)
+            if(result) :
+                # path = pathfind(start, destination)
+                path = "1, 3, 4"
+            # 2. insert into OBU
+            result = rsu_db.register_obu(payload['obu_id'], path)
+            print('register_obu result : ', result)
+            # 3. send obu info to next rsu - mqtt publish (obu/register)
+            next_rsu = 3
+            tmp = str(next_rsu) + '/obu/register'
+            publish_topic.append(tmp)
+            message = {}
+            message['obu_id'] = payload['obu_id']
+            message['path'] = path
+            messageJson = json.dumps(message)
+            publish_msg.append(messageJson)
+    else : # test
+        result = rsu_db.db_test(rsu)
         if(result) :
-            # path = pathfind(start, destination)
-            path = "1, 3, 4"
-        # 2. insert into OBU
-        result = rsu_db.register_obu(payload['obu_id'], path)
-        print('register_obu result : ', result)
-        # 3. send obu info to next rsu - mqtt publish (obu/register)
-        next_rsu = 3
-        tmp = str(next_rsu) + '/obu/register'
-        publish_topic.append(tmp)
-        message = {}
-        message['obu_id'] = payload['obu_id']
-        message['path'] = path
-        messageJson = json.dumps(message)
-        publish_msg.append(messageJson)
-    elif(subscribe_topic == str(rsu_id) + '/test') :
-	    print("Test ok")
+            print('result : ', result)
+            print('Test ok')
+        else :
+            print('Test failed')
 
 if mode not in AllowedActions:
     # parser.error("Unknown --mode option %s. Must be one of %s" % (mode, str(AllowedActions)))
