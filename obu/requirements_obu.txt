@@ -1,0 +1,4 @@
+pdfcrowd
+opencv-python
+numpy
+sqlite3
