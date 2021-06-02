@@ -13,7 +13,6 @@
 # * permissions and limitations under the License.
 # */
 
-
 import os
 import sys
 import time
@@ -31,27 +30,14 @@ AllowedActions = ['both', 'publish', 'subscribe']
 MAX_DISCOVERY_RETRIES = 10
 GROUP_CA_PATH = "./groupCA/"
 
-# Read in command-line parameters
-parser = argparse.ArgumentParser()
-parser.add_argument("-e", "--endpoint", action="store", required=True, dest="host", help="Your AWS IoT custom endpoint")
-parser.add_argument("-r", "--rootCA", action="store", required=True, dest="rootCAPath", help="Root CA file path")
-parser.add_argument("-c", "--cert", action="store", dest="certificatePath", help="Certificate file path")
-parser.add_argument("-k", "--key", action="store", dest="privateKeyPath", help="Private key file path")
-parser.add_argument("-n", "--thingName", action="store", dest="thingName", default="Bot", help="Targeted thing name")
-parser.add_argument("-t", "--topic", action="store", dest="topic", default="sdk/test/Python", help="Targeted topic")
-parser.add_argument("-m", "--mode", action="store", dest="mode", default="both",
-                    help="Operation modes: %s"%str(AllowedActions))
-parser.add_argument("-M", "--message", action="store", dest="message", default="Hello World!",
-                    help="Message to publish")
-
-args = parser.parse_args()
-host = args.host
-rootCAPath = args.rootCAPath
-certificatePath = args.certificatePath
-privateKeyPath = args.privateKeyPath
-clientId = args.thingName
-thingName = args.thingName # RSUn
-topic = args.topic
+host = 'a2twdhxfhzmdtl-ats.iot.ap-northeast-2.amazonaws.com'
+rootCAPath = 'root-ca-cert.pem'
+certificatePath = 'cert.pem'
+privateKeyPath = 'private.key'
+clientId = 'RSU1'
+thingName = 'RSU1'
+topic = 'hello/world/pubsub'
+mode = 'publish'
 
 rsu_id = int(thingName[3:])
 print("================rsu_id(%d)================" %(rsu_id))
@@ -70,7 +56,7 @@ def customOnMessage(message):
     if(subscribe_topic == str(rsu_id) + '/trigger/rsu/anomaly') :
         print('=============%d/trigger/rsu/anomaly=============' %(rsu_id))
         # 1. send image to cloud
-        from sendImage import sendImage
+        from send_image import sendImage
         sendImage_result = sendImage() # parameter : image name
         print('sendImage_result : ', sendImage_result)
         # 2. insert into RSUState
@@ -131,25 +117,32 @@ def customOnMessage(message):
         message['path'] = path
         messageJson = json.dumps(message)
         publish_msg.append(messageJson)
+    elif(subscribe_topic == str(rsu_id) + '/test') :
+	    print("Test ok")
 
-if args.mode not in AllowedActions:
-    parser.error("Unknown --mode option %s. Must be one of %s" % (args.mode, str(AllowedActions)))
+if mode not in AllowedActions:
+    # parser.error("Unknown --mode option %s. Must be one of %s" % (mode, str(AllowedActions)))
+    print("Unknown --mode option %s. Must be one of %s" % (mode, str(AllowedActions)))
     exit(2)
 
-if not args.certificatePath or not args.privateKeyPath:
-    parser.error("Missing credentials for authentication, you must specify --cert and --key args.")
+if not certificatePath or not privateKeyPath:
+    # parser.error("Missing credentials for authentication, you must specify --cert and --key args.")
+    print("Missing credentials for authentication, you must specify --cert and --key args.")
     exit(2)
 
 if not os.path.isfile(rootCAPath):
-    parser.error("Root CA path does not exist {}".format(rootCAPath))
+    # parser.error("Root CA path does not exist {}".format(rootCAPath))
+    print("Root CA path does not exist {}".format(rootCAPath))
     exit(3)
 
 if not os.path.isfile(certificatePath):
-    parser.error("No certificate found at {}".format(certificatePath))
+    # parser.error("No certificate found at {}".format(certificatePath))
+    print("No certificate found at {}".format(certificatePath))
     exit(3)
 
 if not os.path.isfile(privateKeyPath):
-    parser.error("No private key found at {}".format(privateKeyPath))
+    # parser.error("No private key found at {}".format(privateKeyPath))
+    print("No private key found at {}".format(privateKeyPath))
     exit(3)
 
 # Configure logging
@@ -198,13 +191,13 @@ while retryCount != 0:
     except DiscoveryInvalidRequestException as e:
         print("Invalid discovery request detected!")
         print("Type: %s" % str(type(e)))
-        print("Error message: %s" % e.message)
+        # print("Error message: %s" % e.message)
         print("Stopping...")
         break
     except BaseException as e:
-        print("Error in discovery!")
-        print("Type: %s" % str(type(e)))
-        print("Error message: %s" % e.message)
+        # print("Error in discovery!")
+        # print("Type: %s" % str(type(e)))
+        # print("Error message: %s" % e.message)
         retryCount -= 1
         print("\n%d/%d retries left\n" % (retryCount, MAX_DISCOVERY_RETRIES))
         print("Backing off...\n")
@@ -232,23 +225,21 @@ for connectivityInfo in coreInfo.connectivityInfoList:
     except BaseException as e:
         print("Error in connect!")
         print("Type: %s" % str(type(e)))
-        print("Error message: %s" % e.message)
+        # print("Error message: %s" % e.message)
 
 if not connected:
     # print("Cannot connect to core %s. Exiting..." % coreInfo.coreThingArn)
     sys.exit(-2)
 
 # Successfully connected to the core
-if args.mode == 'both' or args.mode == 'subscribe':
+if mode == 'both' or mode == 'subscribe':
     myAWSIoTMQTTClient.subscribe(topic, 0, None)
 time.sleep(2)
 
 loopCount = 0
 while True:
     try :
-        global publish_topic
-        global publish_msg
-        if args.mode == 'both' or args.mode == 'publish':
+        if mode == 'both' or mode == 'publish':
             n = len(publish_topic)
             for i in range(n) :
                 myAWSIoTMQTTClient.publish(publish_topic[i], publish_msg[i], 0)
