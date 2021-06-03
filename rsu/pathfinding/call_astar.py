@@ -1,4 +1,4 @@
-from Astar import Node
+from .Astar import Node
 
 def change_branch(start, end, traffic) :
     try :
@@ -10,7 +10,7 @@ def change_branch(start, end, traffic) :
 
 def find_path(start, end) :
     result = start.aStar(start, end)
-    return result
+    return start.printPath(result)
 
 def call_astar() :
     n1 = Node(37.524, 127.053)

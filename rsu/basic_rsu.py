@@ -114,7 +114,7 @@ def customOnMessage(message):
                 result = rsu_db.register_obu(rsu, payload['obu_id'], path)
                 print('register_obu result : ', result)
             
-            now_idx = path.find(str(rsu))
+            now_idx = path.index(str(rsu))
             if(now_idx == len(path) - 1) :
                 start = end = path[now_idx]
             elif(now_idx == len(path) - 2) :
