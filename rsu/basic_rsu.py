@@ -45,7 +45,14 @@ print("================rsu_id(%d)================" %(rsu_id))
 publish_topic = []
 publish_msg = []
 
+# 알고리즘 도로 정보 초기화
+from pathfinding import call_astar as astar
+global nodes
+nodes = astar.call_astar()
+# from pathfinding import call_dijkstra
+
 import rsu_db
+
 # General message notification callback
 def customOnMessage(message):
     global publish_topic
@@ -68,7 +75,9 @@ def customOnMessage(message):
             # 2. insert into RSUState
             result = rsu_db.insert_anomaly(rsu, payload['accident_type'], payload['accident_size'])
             print('insert_anomaly result : ', result)
-            # 3. send anormaly info to near rsu - mqtt publish(n/rsu/anormaly)
+            # 3. change links weight
+            # astar.change_branch(start, end, traffic)
+            # 4. send anormaly info to near rsu - mqtt publish(n/rsu/anormaly)
             near_rsu = rsu_db.select_near_rsu(rsu) # select near rsu
             for i in near_rsu :
                 publish_topic.append(str(i) + '/rsu/anomaly')
@@ -82,10 +91,10 @@ def customOnMessage(message):
         elif(topic_split[2] == 'obu') : # /trigger/obu/register
             print('trigger/obu/register')
             # 1. calculate path
-            # start = int(thingName)
-            # destination = payload['destination']
-            # path = pathfind(start, destination)
-            path = '1, 2, 3, 4'
+            start = int(rsu) 
+            destination = int(payload['destination'])
+            path = astar.find_path(nodes[start - 1], nodes[destination - 1])
+            print(path)
             # 2. insert into OBU(obu id & path)
             result = rsu_db.register_obu(rsu, payload['obu_id'], path)
             print('register_obu result : ', result)
@@ -105,6 +114,8 @@ def customOnMessage(message):
             # 1. insert into RSUState
             result = rsu_db.insert_anomaly(rsu, payload['rsu_id'], payload['accident_type'], payload['accident_size'])
             print('insert_anomaly result : ', result)
+            # 2. change links weight
+            # astar.change_branch(start, end, traffic)
 
         elif(topic_split[1] == 'obu') : # /obu/register
             print('obu/register')
@@ -112,9 +123,9 @@ def customOnMessage(message):
             # 1. check anormaly table - if anormaly in path, recalculate path
             result = rsu_db.check_anomaly(rsu, path)
             print('check_anomaly result : ', result)
-            if(result) :
-                # path = pathfind(start, destination)
-                path = "1, 3, 4"
+            if(result) : # path에 이상현상이 있으면 재탐색
+                path_result = astar.find_path(nodes[rsu - 1], nodes[path[-1] - 1]) # path를 어떻게 넘겨주는지 확인필요
+                print(path_result)
             # 2. insert into OBU
             result = rsu_db.register_obu(payload['obu_id'], path)
             print('register_obu result : ', result)
