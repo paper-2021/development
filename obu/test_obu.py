@@ -88,8 +88,7 @@ function initTmap(){
         icon: "images/page_1/car.png", 
         map: map 
     });
-
-    document.getElementById("u4_img").src = """+ data[3]+ """;
+    document.getElementById("u4_png").src = """+ data[3]+ """;
 } 
         """
     else:

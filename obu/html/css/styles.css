@@ -126,24 +126,7 @@
   text-transform:none;
   visibility:hidden;
 }
-#u4_img {
-  border-width:0px;
-  position:absolute;
-  left:0px;
-  top:0px;
-  width:323px;
-  height:218px;
-  background:inherit;
-  background-color:rgba(255, 255, 255, 0);
-  background-repeat:no-repeat;
-  background-size:392px 217px;
-  background-position: -34.5px 0.5px;
-  border:none;
-  border-radius:0px;
-  -moz-box-shadow:none;
-  -webkit-box-shadow:none;
-  box-shadow:none;
-}
+
 #u4 {
   border-width:0px;
   position:absolute;
