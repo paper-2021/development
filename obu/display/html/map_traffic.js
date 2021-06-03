@@ -1,4 +1,5 @@
 var map, marker;
+
 function initTmap(){
     var map = new Tmapv2.Map("map_div",  
     {
@@ -10,8 +11,8 @@ function initTmap(){
     
     var polyline = new Tmapv2.Polyline({
         path: [new Tmapv2.LatLng(37.518, 127.050),
-        new Tmapv2.LatLng(37.513, 127.053)
-    ],
+            new Tmapv2.LatLng(37.513, 127.053)
+        ],
         strokeColor: "#dd00dd",
 		strokeWeight: 6,
 		draggable: true, 
@@ -26,4 +27,5 @@ function initTmap(){
         icon: "images/page_1/car.png", 
         map: map 
     });
-}
+    document.getElementById("u4_png").src = "http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg";
+} 
