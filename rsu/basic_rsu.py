@@ -77,7 +77,7 @@ def customOnMessage(message):
             print('insert_anomaly result : ', result)
             # 3. change links weight
             # astar.change_branch(start, end, traffic)
-            # 4. send anormaly info to near rsu - mqtt publish(n/rsu/anormaly)
+            # 4. send anomaly info to near rsu - mqtt publish(n/rsu/anomaly)
             near_rsu = rsu_db.select_near_rsu(rsu) # select near rsu
             for i in near_rsu :
                 publish_topic.append(str(i) + '/rsu/anomaly')
@@ -87,26 +87,57 @@ def customOnMessage(message):
                 message['accident_size'] = payload['accident_size']
                 messageJson = json.dumps(message)
                 publish_msg.append(messageJson)
+            
+            # 5. send anomaly image url to registered obu - mqtt publish(obu/anomaly)
+            select_obu = rsu_db.select_near_obu(rsu)
+            tmp = 'obu/anomaly'
+            publish_topic.append(tmp)
+            message = {}
+            message['url'] = 'http://3.35.184.173:8000/upload/' + sendImage_result
+            messageJson = json.dumps(message)
+            publish_msg.append(messageJson)
 
         elif(topic_split[2] == 'obu') : # /trigger/obu/register
             print('trigger/obu/register')
-            # 1. calculate path
-            start = int(rsu) 
-            destination = int(payload['destination'])
-            path = astar.find_path(nodes[start - 1], nodes[destination - 1])
-            print(path)
-            # 2. insert into OBU(obu id & path)
-            result = rsu_db.register_obu(rsu, payload['obu_id'], path)
-            print('register_obu result : ', result)
-            # 3. send obu info to next rsu - mqtt publish (obu/register)
-            next_rsu = 2 # find next rsu in path
-            tmp = str(next_rsu) + '/obu/register'
+            select_obu = rsu_db.select_near_obu(rsu)
+            if(len(select_obu) > 0) : # obu가 이미 등록되어있음
+                path_db = select_obu[0][1]
+                path = path_db.split(',')
+            else : # 처음 등록
+                # 1. calculate path
+                start = int(rsu) 
+                destination = int(payload['destination'])
+                path = astar.find_path(nodes[start - 1], nodes[destination - 1])
+                print(f'{start} -> {destination} : {path}')
+                path = list(map(str, path))
+                # 2. insert into OBU(obu id & path)
+                result = rsu_db.register_obu(rsu, payload['obu_id'], path)
+                print('register_obu result : ', result)
+            
+            now_idx = path.find(str(rsu))
+            if(now_idx == len(path) - 1) :
+                start = end = path[now_idx]
+            elif(now_idx == len(path) - 2) :
+                start = end = path[now_idx]
+            else :
+                start, end = path[now_idx + 1], path[now_idx + 2]
+            # 3. send obu info to next rsu - mqtt publish (rsun/obu/register)
+            tmp = start + '/obu/register'
             publish_topic.append(tmp)
             message = {}
             message['obu_id'] = payload['obu_id']
-            message['path'] = path
+            message['path'] = path_db
             messageJson = json.dumps(message)
             publish_msg.append(messageJson)
+
+            # 4. send path to obu - mqtt publish (obu/register)
+            publish_topic.append('obu/register')
+            message = {}
+            message['start'] = start 
+            message['end'] = end
+            messageJson = json.dumps(message)
+            publish_msg.append(messageJson)
+
 
     elif(len(topic_split) == 3) : # 주변 RSU로 부터 전달받는 경우
         if(topic_split[1] == 'rsu') : # /rsu/anomaly
