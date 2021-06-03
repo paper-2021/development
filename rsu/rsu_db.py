@@ -23,6 +23,7 @@ def register_obu(rsu, obu_id, obu_path) :
         path = './' + rsu + '/' + db_file
         conn = sqlite3.connect(path)
         cur = conn.cursor()
+        obu_path = ','.join(obu_path)
         sql = "INSERT INTO OBU VALUES (?, ?);"
         result = cur.execute(sql, [obu_id, obu_path])
         # print('register_obu insert result : ', result)
@@ -58,6 +59,20 @@ def select_near_rsu(rsu) :
         cur = conn.cursor()
         result = cur.execute("SELECT rsu_id FROM NearRSU;").fetchall()
         near = [x[0] for x in result]
+        conn.close()
+        return near
+    except Exception as e :
+        return False
+    finally :
+        conn.close()
+
+def select_near_obu(rsu) :
+    try :
+        path = './' + rsu + '/' + db_file
+        conn = sqlite3.connect(path)
+        cur = conn.cursor()
+        result = cur.execute("SELECT obu_id, path FROM OBU;").fetchall()
+        near = [(x[0], x[1]) for x in result]
         conn.close()
         return near
     except Exception as e :

@@ -14,8 +14,8 @@ def sendImage():
             'file': open(imagePath, 'rb')
         }
         response = requests.post(url, headers=headers, files=files)
-        print('response : ', response)
-        return True
+        res_dict = response.json()
+        return res_dict['image_path']
     except Exception as e :
         print("sendImage : ", str(e))
         return False

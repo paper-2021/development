@@ -8,7 +8,9 @@ app.use(express.static('public'));
 
 app.post('/image', upload, (req, res) => {
     console.log("Image upload success")
-    res.status(200).json({'msg' : 'Image upload success'})
+    console.log('req.type : ', req.type, ' req.fileName : ', req.fileName)
+    let image_path = req.type + '/' + req.fileName
+    res.status(200).json({'msg' : 'Image upload success', 'image_path' : image_path})
 })
 
 app.use('/', (req, res) => {
