@@ -1,7 +1,7 @@
 import heapq  
 import time
-global graph_ver3
-graph_ver3 = {}
+global graph
+graph = {}
 global path_dict 
 path_dict= {}
 global idCounter
@@ -21,23 +21,23 @@ class Node():
       return self.id
     
     def addBranch(self, weight, traffic, node):
-        if self.id in graph_ver3.keys():
-            addition = graph_ver3[self.id]
+        if self.id in graph.keys():
+            addition = graph[self.id]
             addition[str(node)] = [weight, traffic]
-            graph_ver3[self.id] = addition
+            graph[self.id] = addition
         else: 
-            graph_ver3[self.id] = {str(node) : [weight, traffic]}
+            graph[self.id] = {str(node) : [weight, traffic]}
 
     def changeBranch(self, traffic, node) :
       try:
-        modify_node = graph_ver3[self.id]
+        modify_node = graph[self.id]
         modify_node[node.id][1] = traffic
-        graph_ver3[self.id] = modify_node
+        graph[self.id] = modify_node
       except Exception as e:
         print(e)
         print('Change node error %s -> %s' %(self.id, node))
 
-    def dijkstra(self, graph, path_dict, start, end):
+    def dijkstra(self, start, end):
       distances = {node: float('inf') for node in graph}  
       distances[start] = 0  
       queue = []
@@ -57,8 +57,3 @@ class Node():
             heapq.heappush(queue, [distance, new_destination]) 
         
       return path_dict[end]
-
-start = time.time()
-result = n0.dijkstra(graph_ver3, path_dict, '65', '39') #graph, path, start node, end node
-print(result)
-print("Dijstra time: "+ str(time.time()-start))

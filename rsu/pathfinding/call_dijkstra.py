@@ -1,4 +1,4 @@
-from Astar import Node
+from dijkstra import Node
 
 n1 = Node(37.524, 127.053)
 n2 = Node(37.519, 127.056)
@@ -557,8 +557,8 @@ n102.addBranch(446, 60, n103)
 n103.addBranch(496, 60, n99)
 n103.addBranch(446, 60, n102)
 
-# n16.changeBranch(10, n17)
+# n1.changeBranch(10, n2)
 # n17.changeBranch(10, n16)
 
-result = n16.aStar(n16, n51)
-n16.printPath(result)
+result = n1.dijkstra('1', '16')
+print(result)
