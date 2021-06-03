@@ -11,9 +11,12 @@ from AWSIoTPythonSDK.core.protocol.connection.cores import ProgressiveBackOffCor
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 from AWSIoTPythonSDK.exception.AWSIoTExceptions import DiscoveryInvalidRequestException
 
-import pdfcrowd
 import cv2
 import numpy as np
+import time
+import db_obu
+from display import htmltopng as htmltopng
+from display import modify_js as modify_js
 
 AllowedActions = ['both', 'publish', 'subscribe']
 
@@ -40,109 +43,22 @@ thingName = 'OBU' #args.thingName
 topic = 'hello/world/pubsub' #args.topic
 args.mode = 'publish'
 args.message = 'Start'
-obu_id = '1'
+obu_id = 1
+obu_loc = '' # NOTE start obu 위치 여기 넣기
 publish_topic = []
 publish_msg = []
 rsu_id = ''
+next_rsu_id = ''
 route = ""
+start_time = 0
+time_obu = 0
 
 #http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg -> image
 
-def modify_js(situation, data):
-    """
-    data
-    situation : false -> [obu_loc, start_loc, end_loc]
-    situation : true  -> [obu_loc, start_loc, end_loc, imagename]
-    """
-    js_file = ''
-    global route
-    route += """new Tmapv2.LatLng("""+data[1]+ """),
-            new Tmapv2.LatLng(""" + data[2] + """),"""
-    if(situation):
-        js_file = """
-var map, marker;
-function initTmap(){
-    var map = new Tmapv2.Map("map_div",  
-    {
-        center: new Tmapv2.LatLng(37.495, 127.021),
-        width: "1500px", 
-        height: "700px",
-        zoom: 14
-    });
-    var rsu = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng(""" + data[2]+ """),
-        map: map
-    });
-    var polyline = new Tmapv2.Polyline({
-        path: [ """ + route + """],
-        strokeColor: "#dd00dd",
-		strokeWeight: 6, 
-		draggable: true, 
-		strokeStyle:'dot',
-		outline: true, 
-		outlineColor:'#ffffff',
-		map: map 
-    });
-    var car = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng("""+data[0]+"""), 
-        icon: "images/page_1/car.png", 
-        map: map 
-    });
-    document.getElementById("u4_png").src = """+ data[3]+ """;
-} 
-        """
-    else:
-        js_file = """
-var map, marker;
-function initTmap(){
-    var map = new Tmapv2.Map("map_div",  
-    {
-        center: new Tmapv2.LatLng(37.495, 127.021), 
-        width: "1500px", 
-        height: "700px",
-        zoom: 14
-    });
-    
-    var polyline = new Tmapv2.Polyline({
-        path: ["""+ route + """],
-        strokeColor: "#dd00dd",
-		strokeWeight: 6,
-		draggable: true, 
-		strokeStyle:'dot', 
-		outline: true,
-		outlineColor:'#ffffff',
-		map: map 
-    });
-
-    var car = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng("""+data[0]+"""),
-        icon: "images/page_1/car.png", 
-        map: map 
-    });
-} 
-"""
-    return js_file
-
-# html to png
-def change_htmltopng (htmlfile):
-    try:
-        # create the API client instance
-        client = pdfcrowd.HtmlToImageClient('demo', 'ce544b6ea52a5621fb9d55f8b542d14d')
-        # configure the conversion
-        client.setOutputFormat('png')
-        # run the conversion and write the result to a file
-        client.convertFileToFile('html/'+htmlfile, 'image/map.png')
-    except pdfcrowd.Error as why:
-        # report the error
-        sys.stderr.write('Pdfcrowd Error: {}\n'.format(why))
-        # rethrow or handle the exception
-        raise
 
 def customOnMessage(message):
-    import db_obu
     global publish_topic
     global publish_msg
-    global rsu_ip
     #print('Received message on topic %s: %s\n' % (message.topic, message.payload))
     subscribe_topic = message.topic
     payload = json.loads(message.payload)
@@ -152,10 +68,10 @@ def customOnMessage(message):
         # 1. regiter rsu
         message = {}
         rsu_id = ''
-        route = ""
+        modify_js.init_map()
         message['obu_id'] = obu_id
         # 1-1 obu location에서 담당하는 rsu_id 찾기
-        obu_loc = 'obu_location' #ex: '37.518, 127.050'
+        obu_loc = find_obu() #ex: '37.518, 127.050'
         rsu_id = db_obu.select_start(obu_loc) #ex: 9
         messsage['obu_location'] = obu_loc
         message['destination'] = ('위도', '경도') # input 목적지, (65)ex: 37.493, 127.013 
@@ -167,26 +83,26 @@ def customOnMessage(message):
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         situation = False
-        obu_loc = 'obu_location' #ex: '37.518, 127.050', # 현재 OBU 위치 받기
         next_rsu_id = payload['rsu_id'] #(9)ex: '37.518, 127.050'
+        obu_loc = find_obu() #ex: '37.518, 127.050', # 현재 OBU 위치 받기
         rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
         next_rsu_loc = db_obu.select_rsu_loc(next_rsu_id)
-        rsu_loc = str(int(rsu_loc[0]))+', ' + str(int(rsu_loc[1]))
-        next_rsu_loc = str(int(next_rsu_loc[0]))+ ', '+str(int(next_rsu_loc[1]))
+        rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
+        next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
         data_next = [obu_loc, rsu_loc, next_rsu_loc]
         if(situation):
             data_next.append('http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg')
         # 2-2 modify js
-        js_file = modify_js(situation, data_next)
-        with open('html/map_js.js', 'w') as file:
+        js_file = modify_js.modify_js(situation, data_next)
+        with open('display/html/map_js.js', 'w') as file:
             file.write(js_file)
         # 2-3 제작한 화면 png로 바꾸기
         if(situation):
-            change_htmltopng('map_traffic.html')
+            htmltopng.change_htmltopng('map_traffic.html')
         else:
-            change_htmltopng('map_normal.html') 
+            htmltopng.change_htmltopng('map_normal.html') 
         # 2-4 화면 띄우기
-        image = cv2.imread('image/map.png', cv2.IMREAD_COLOR)
+        image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
         cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
         cv2.waitKey(0) # time 마다 키 입력사애를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
         cv2.destroyAllWindows() # 모든 윈도우창을 닫는다.
@@ -196,7 +112,7 @@ if args.mode not in AllowedActions:
     parser.error("Unknown --mode option %s. Must be one of %s" % (args.mode, str(AllowedActions)))
     exit(2)
 
-if not args.certificatePath or not args.privateKeyPath:
+if not certificatePath or not privateKeyPath:
     parser.error("Missing credentials for authentication, you must specify --cert and --key args.")
     exit(2)
 
@@ -304,13 +220,33 @@ if args.mode == 'both' or args.mode == 'subscribe':
 time.sleep(2)
 
 loopCount = 0
-if args.mode == 'both' or args.mode == 'publish':
-    message = {}
-    message['message'] = args.message
-    message['sequence'] = loopCount
-    messageJson = json.dumps(message)
-    myAWSIoTMQTTClient.publish(topic, messageJson, 0)
-    if args.mode == 'publish':
-        print('Published topic %s: %s\n' % (topic, messageJson))
-    loopCount += 1
+while True:
+    print("=========== OBU Start ===========")
+    myAWSIoTMQTTClient.publish('1/trigger/start', 'Start', 0)
+    try:
+        print("Route: %d -> %d" %(rsu_id, next_rsu_id))
+        # find next rsu
+        if(time.time() - start_time >= time_obu):
+            print("======= Start content next RSU %d" %(next_rsu_id))
+            # make message
+            message = {}
+            rsu_id = next_rsu_id
+            message['obu_id'] = obu_id
+            # send mqtt
+            messageJson = json.dumps(message)
+            myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/connnent', messageJson, 0)
+    except Exception as e:
+        print(e)
+        print('OBU Error')
+
+def find_obu():
+    if rsu_id == '':
+        return obu_loc
+    if(time.time() - start_time >= time_obu):
+        time_obu = db_obu.select_dis(rsu_id, next_rsu_id)
+        start_time = time.time()
+        return rsu_id
+
+    
+
 
