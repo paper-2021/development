@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 import os
 import sys
 import time
@@ -33,16 +33,17 @@ parser = argparse.ArgumentParser()
 args = parser.parse_args()
 host = 'a2twdhxfhzmdtl-ats.iot.ap-northeast-2.amazonaws.com' #args.host
 rootCAPath = 'root-ca-cer.pem' #args.rootCAPath
-certificatePath = 'cert.pem' #args.certificatePath
-privateKeyPath = 'private.key' #args.privateKeyPath
+certificatePath = '8dc995a116.cert.pem' #args.certificatePath
+privateKeyPath = '8dc995a116.private.key' #args.privateKeyPath
 clientId = 'OBU' #args.thingName
 thingName = 'OBU' #args.thingName
 topic = 'hello/world/pubsub' #args.topic
-
-obu_id = int(thingName[3:])
+args.mode = 'publish'
+args.message = 'Start'
+obu_id = '1'
 publish_topic = []
 publish_msg = []
-rsu_ip = ''
+rsu_id = ''
 route = ""
 
 #http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg -> image
@@ -50,47 +51,45 @@ route = ""
 def modify_js(situation, data):
     """
     data
-    situation : false -> [start_loc, end_loc]
-    situation : true  -> [start_loc, end_loc, imagename]
+    situation : false -> [obu_loc, start_loc, end_loc]
+    situation : true  -> [obu_loc, start_loc, end_loc, imagename]
     """
     js_file = ''
     global route
-    route += """new Tmapv2.LatLng("""+data[0]+ """),
-            new Tmapv2.LatLng(""" + data[1] + """),"""
+    route += """new Tmapv2.LatLng("""+data[1]+ """),
+            new Tmapv2.LatLng(""" + data[2] + """),"""
     if(situation):
         js_file = """
 var map, marker;
 function initTmap(){
     var map = new Tmapv2.Map("map_div",  
     {
-        center: new Tmapv2.LatLng(37.261851,127.031121), // 수원시청을 중심으로
+        center: new Tmapv2.LatLng(37.495, 127.021),
         width: "1500px", 
         height: "700px",
-        zoom: 16
+        zoom: 14
     });
-    // 마커 생성, 마커 이미지 유진이랑 상의하고 바꾸기
     var rsu = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng(""" + data[1]+ """),
-        map: map //Marker가 표시될 Map 설정..
+        position: new Tmapv2.LatLng(""" + data[2]+ """),
+        map: map
     });
-    //경로 그려주기, 화살표만들기 가능한지 해보기 45도로
     var polyline = new Tmapv2.Polyline({
         path: [ """ + route + """],
-        strokeColor: "#dd00dd", // 라인 색상
-		strokeWeight: 6, // 라인 두께
-		draggable: true, //드래그 여부
-		strokeStyle:'dot', // 선의 종류 soild, dash,
-		outline: true, // 외각 선을 설정
-		outlineColor:'#ffffff', // 외각 선 색상
-		map: map // 지도 객체
+        strokeColor: "#dd00dd",
+		strokeWeight: 6, 
+		draggable: true, 
+		strokeStyle:'dot',
+		outline: true, 
+		outlineColor:'#ffffff',
+		map: map 
     });
     var car = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng(37.266217, 127.033616), //Marker의 중심좌표 설정, rsu_ip 가 들어가도록 하게 하기
-        icon: "images/page_1/car.png", //Marker의 아이콘.
-        map: map //Marker가 표시될 Map 설정..
+        position: new Tmapv2.LatLng("""+data[0]+"""), 
+        icon: "images/page_1/car.png", 
+        map: map 
     });
 
-    document.getElementById("u4_img").src = """+ data[2]+ """;
+    document.getElementById("u4_img").src = """+ data[3]+ """;
 } 
         """
     else:
@@ -99,48 +98,44 @@ var map, marker;
 function initTmap(){
     var map = new Tmapv2.Map("map_div",  
     {
-        center: new Tmapv2.LatLng(37.261851,127.031121), // 수원시청을 중심으로
+        center: new Tmapv2.LatLng(37.495, 127.021), 
         width: "1500px", 
         height: "700px",
-        zoom: 16
+        zoom: 14
     });
-    //경로 그려주기, 화살표만들기 가능한지 해보기 45도로
+    
     var polyline = new Tmapv2.Polyline({
-        path: ["""
-            + route + """],
-        strokeColor: "#dd00dd", // 라인 색상
-		strokeWeight: 6, // 라인 두께
-		draggable: true, //드래그 여부
-		strokeStyle:'dot', // 선의 종류 soild, dash,
-		outline: true, // 외각 선을 설정
-		outlineColor:'#ffffff', // 외각 선 색상
-		map: map // 지도 객체
+        path: ["""+ route + """],
+        strokeColor: "#dd00dd",
+		strokeWeight: 6,
+		draggable: true, 
+		strokeStyle:'dot', 
+		outline: true,
+		outlineColor:'#ffffff',
+		map: map 
     });
 
     var car = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng(37.266217, 127.033616), //Marker의 중심좌표 설정, rsu_ip 가 들어가도록 하게 하기
-        icon: "images/page_1/car.png", //Marker의 아이콘.
-        map: map //Marker가 표시될 Map 설정..
+        position: new Tmapv2.LatLng("""+data[0]+"""),
+        icon: "images/page_1/car.png", 
+        map: map 
     });
 } 
 """
     return js_file
 
-# html을 image로 바꾸는 function
+# html to png
 def change_htmltopng (htmlfile):
     try:
         # create the API client instance
         client = pdfcrowd.HtmlToImageClient('demo', 'ce544b6ea52a5621fb9d55f8b542d14d')
-
         # configure the conversion
         client.setOutputFormat('png')
-
         # run the conversion and write the result to a file
         client.convertFileToFile('html/'+htmlfile, 'image/map.png')
     except pdfcrowd.Error as why:
         # report the error
         sys.stderr.write('Pdfcrowd Error: {}\n'.format(why))
-
         # rethrow or handle the exception
         raise
 
@@ -157,28 +152,33 @@ def customOnMessage(message):
         print('=============%d/trigger/obu/start============='%(obu_id))
         # 1. regiter rsu
         message = {}
+        rsu_id = ''
+        route = ""
         message['obu_id'] = obu_id
         # 1-1 obu location에서 담당하는 rsu_id 찾기
-        obu_location = 'obu_location'
-        # NOTE obu_location 질의 때문에 <= or >= 이렇게 해야 하는데 DB 바꿔야 하는지 물어보기
-        rsu_ip = db_obu.select_db_rsu_ip(obu_location)
-        rsu_id = db_obu.select_db_rsu_id(obu_location)
-        messsage['obu_location'] = obu_location
-        message['destination'] = ('위도', '경도') # input 위도, 경도
+        obu_loc = 'obu_location' #ex: '37.518, 127.050'
+        rsu_id = db_obu.select_start(obu_loc) #ex: 9
+        messsage['obu_location'] = obu_loc
+        message['destination'] = ('위도', '경도') # input 목적지, (65)ex: 37.493, 127.013 
         # 1-2 send mqtt
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
     elif(subscribe_topic == str(obu_id) + '/obu/register'):
-        print('=============%d/obu/register============='%(obu_id))
-        # 2. 지도에 화면 띄우기
+        print('=============%d/obu/register=============' %(obu_id))
+        # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         situation = False
-        next_rsu_ip = payload['rsu_ip']
-        rse_loc = db_obu.select_db_location(rsu_ip)
-        next_rsu_loc = db_obu.select_db_location(next_rsu_ip)
-        data_next = next_rsu_loc.split('/')
-        # 2-2 지도 제작할 화면 js 수정하기
-        js_file = modify_js(situation, data_next) # NOTE 그전에 이동한 경로도 가지고 있도록 수정하기
+        obu_loc = 'obu_location' #ex: '37.518, 127.050', # 현재 OBU 위치 받기
+        next_rsu_id = payload['rsu_id'] #(9)ex: '37.518, 127.050'
+        rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
+        next_rsu_loc = db_obu.select_rsu_loc(next_rsu_id)
+        rsu_loc = str(int(rsu_loc[0]))+', ' + str(int(rsu_loc[1]))
+        next_rsu_loc = str(int(next_rsu_loc[0]))+ ', '+str(int(next_rsu_loc[1]))
+        data_next = [obu_loc, rsu_loc, next_rsu_loc]
+        if(situation):
+            data_next.append('http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg')
+        # 2-2 modify js
+        js_file = modify_js(situation, data_next)
         with open('html/map_js.js', 'w') as file:
             file.write(js_file)
         # 2-3 제작한 화면 png로 바꾸기
@@ -189,7 +189,7 @@ def customOnMessage(message):
         # 2-4 화면 띄우기
         image = cv2.imread('image/map.png', cv2.IMREAD_COLOR)
         cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
-        cv2.waitKey(0) # time마다 키 입력사애를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
+        cv2.waitKey(0) # time 마다 키 입력사애를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
         cv2.destroyAllWindows() # 모든 윈도우창을 닫는다.
 
 

@@ -147,3 +147,4 @@ obu/test-obu
 
 #test
 *__pycache__*
+*pytest*

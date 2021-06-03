@@ -2,3 +2,4 @@ pdfcrowd
 opencv-python
 numpy
 sqlite3
+openjdk-8-jdk
