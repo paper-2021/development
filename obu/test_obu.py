@@ -49,6 +49,7 @@ publish_topic = []
 publish_msg = []
 rsu_id = ''
 next_rsu_id = ''
+end_next_rsu_id = ''
 route = ""
 start_time = 0
 time_obu = 0
@@ -73,34 +74,56 @@ def customOnMessage(message):
         # 1-1 obu location에서 담당하는 rsu_id 찾기
         obu_loc = find_obu() #ex: '37.518, 127.050'
         rsu_id = db_obu.select_start(obu_loc) #ex: 9
-        messsage['obu_location'] = obu_loc
         message['destination'] = ('위도', '경도') # input 목적지, (65)ex: 37.493, 127.013 
         # 1-2 send mqtt
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
-    elif(subscribe_topic == str(obu_id) + '/obu/register'):
-        print('=============%d/obu/register=============' %(obu_id))
+    elif(subscribe_topic == 'obu/register'):
+        print('=============obu/register=============')
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
-        situation = False
-        next_rsu_id = payload['rsu_id'] #(9)ex: '37.518, 127.050'
+        next_rsu_id = payload['start'] #(9)ex: '37.518, 127.050'
+        end_next_rsu_id = payload['end'] 
         obu_loc = find_obu() #ex: '37.518, 127.050', # 현재 OBU 위치 받기
         rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
         next_rsu_loc = db_obu.select_rsu_loc(next_rsu_id)
+        end_next_rsu_loc = db_obu.select_rsu_loc(end_next_rsu_id)
         rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
         next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
-        data_next = [obu_loc, rsu_loc, next_rsu_loc]
-        if(situation):
-            data_next.append('http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg')
+        end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
+        data_next = [obu_loc, rsu_loc, next_rsu_loc, end_next_rsu_loc] 
         # 2-2 modify js
-        js_file = modify_js.modify_js(situation, data_next)
-        with open('display/html/map_js.js', 'w') as file:
-            file.write(js_file)
+        html_file = modify_js.modify_html(False, data_next)
+        with open('display/html/map_normal.html', 'w') as file:
+            file.write(html_file)
         # 2-3 제작한 화면 png로 바꾸기
-        if(situation):
-            htmltopng.change_htmltopng('map_traffic.html')
-        else:
-            htmltopng.change_htmltopng('map_normal.html') 
+        htmltopng.change_htmltopng('map_normal.html') 
+        # 2-4 화면 띄우기
+        image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
+        cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
+        cv2.waitKey(0) # time 마다 키 입력사애를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
+        cv2.destroyAllWindows() # 모든 윈도우창을 닫는다.
+    elif(subscribe_topic == 'obu/anomaly'):
+        print('=============obu/anomaly=============' %(obu_id))
+        # 2. show alarm
+        # 2.-1 현재 rsu와 다음 rsu 위치 구하기
+        next_rsu_id = payload['start'] #(9)ex: '37.518, 127.050'
+        end_next_rsu_id = payload['end'] 
+        obu_loc = find_obu() #ex: '37.518, 127.050', # 현재 OBU 위치 받기
+        rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
+        next_rsu_loc = db_obu.select_rsu_loc(next_rsu_id)
+        end_next_rsu_loc = db_obu.select_rsu_loc(end_next_rsu_id)
+        rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
+        next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
+        end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
+        data_next = [obu_loc, rsu_loc, next_rsu_loc, end_next_rsu_loc] 
+        data_next.append('http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg')
+        # 2-2 modify js
+        html_file = modify_js.modify_html(True, data_next)
+        with open('display/html/map_traffic.html', 'w') as file:
+            file.write(html_file)
+        # 2-3 제작한 화면 png로 바꾸기
+        htmltopng.change_htmltopng('map_traffic.html')
         # 2-4 화면 띄우기
         image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
         cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
@@ -222,7 +245,7 @@ time.sleep(2)
 loopCount = 0
 while True:
     print("=========== OBU Start ===========")
-    myAWSIoTMQTTClient.publish('1/trigger/start', 'Start', 0)
+    myAWSIoTMQTTClient.publish('trigger/start', 'Start', 0)
     try:
         print("Route: %d -> %d" %(rsu_id, next_rsu_id))
         # find next rsu
@@ -234,7 +257,7 @@ while True:
             message['obu_id'] = obu_id
             # send mqtt
             messageJson = json.dumps(message)
-            myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/connnent', messageJson, 0)
+            myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
     except Exception as e:
         print(e)
         print('OBU Error')
