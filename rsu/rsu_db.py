@@ -23,7 +23,6 @@ def register_obu(rsu, obu_id, obu_path) :
         path = './' + rsu + '/' + db_file
         conn = sqlite3.connect(path)
         cur = conn.cursor()
-        obu_path = ','.join(obu_path)
         sql = "INSERT INTO OBU VALUES (?, ?);"
         result = cur.execute(sql, [obu_id, obu_path])
         # print('register_obu insert result : ', result)
@@ -41,13 +40,17 @@ def check_anomaly(rsu, obu_path) :
         path = './' + rsu + '/' + db_file
         conn = sqlite3.connect(db_file)
         cur = conn.cursor()
+        print('obu path : ', obu_path)
+        obu_path = obu_path.split(',')
         result = cur.execute("SELECT rsu_id FROM RSUState WHERE rsu_id in (%s);" %(obu_path)).fetchall()
         if(len(result) > 0) :
             cur.close()
             conn.close()
             return True
+        return False
         conn.close()
     except Exception as e :
+        print('check anomaly e : ', e)
         return False
     finally :
         conn.close()
@@ -62,6 +65,7 @@ def select_near_rsu(rsu) :
         conn.close()
         return near
     except Exception as e :
+        print('select near rsu e : ', e)
         return False
     finally :
         conn.close()
@@ -76,6 +80,7 @@ def select_near_obu(rsu) :
         conn.close()
         return near
     except Exception as e :
+        print('select_near_obu e : ', e)
         return False
     finally :
         conn.close()
@@ -90,6 +95,7 @@ def db_test(rsu) :
         conn.close()
         return near
     except Exception as e :
+        print('db test e : ', e)
         return False
     finally :
         conn.close()

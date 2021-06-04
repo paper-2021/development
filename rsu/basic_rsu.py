@@ -110,6 +110,7 @@ def customOnMessage(message):
                 path = astar.find_path(nodes[start - 1], nodes[destination - 1])
                 print(f'{start} -> {destination} : {path}')
                 path = list(map(str, path))
+                path_db = ','.join(path)
                 # 2. insert into OBU(obu id & path)
                 result = rsu_db.register_obu(rsu, payload['obu_id'], path)
                 print('register_obu result : ', result)
@@ -151,6 +152,7 @@ def customOnMessage(message):
         elif(topic_split[1] == 'obu') : # /obu/register
             print('obu/register')
             path = payload['path']
+            print('path : ', path)
             # 1. check anormaly table - if anormaly in path, recalculate path
             result = rsu_db.check_anomaly(rsu, path)
             print('check_anomaly result : ', result)
@@ -158,17 +160,34 @@ def customOnMessage(message):
                 path_result = astar.find_path(nodes[rsu - 1], nodes[path[-1] - 1]) # path를 어떻게 넘겨주는지 확인필요
                 print(path_result)
             # 2. insert into OBU
-            result = rsu_db.register_obu(payload['obu_id'], path)
+            result = rsu_db.register_obu(rsu, payload['obu_id'], path)
             print('register_obu result : ', result)
             # 3. send obu info to next rsu - mqtt publish (obu/register)
-            next_rsu = 3
-            tmp = str(next_rsu) + '/obu/register'
+            path_list = path.split(',')
+            now_idx = path_list.index(str(rsu))
+            if(now_idx == len(path_list) - 1) :
+                start = end = path_list[now_idx]
+            elif(now_idx == len(path_list) - 2) :
+                start = end = path_list[now_idx]
+            else :
+                start, end = path_list[now_idx + 1], path_list[now_idx + 2]
+
+            tmp = start + '/obu/register'
             publish_topic.append(tmp)
             message = {}
             message['obu_id'] = payload['obu_id']
-            message['path'] = path
+            message['start'] = start
+            message['end'] = end
             messageJson = json.dumps(message)
             publish_msg.append(messageJson)
+
+            publish_topic.append('obu/register')
+            message = {}
+            message['start'] = start 
+            message['end'] = end
+            messageJson = json.dumps(message)
+            publish_msg.append(messageJson)
+
     else : # test
         result = rsu_db.db_test(rsu)
         if(result) :
@@ -299,6 +318,7 @@ while True:
         if mode == 'both' or mode == 'publish':
             n = len(publish_topic)
             for i in range(n) :
+                time.sleep(3)
                 myAWSIoTMQTTClient.publish(publish_topic[i], publish_msg[i], 0)
                 print('Published topic %s: %s\n' % (publish_topic[i], publish_msg[i]))
             # if args.mode == 'publish':
