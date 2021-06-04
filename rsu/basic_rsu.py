@@ -78,12 +78,14 @@ def customOnMessage(message):
             basic_image_path = './blurring/' + str(accident_type) + '/'
 
             # 1. detect license plate
-            # loactions = detect(image_name)
-            locations = []
+            from .blurring import detect
+            locations = detect.detect_ip('./' + str(accident_type) + '/' + image_name)
+            locations = locations[1:]
+            print('locations : ', locations)
 
             # 2. detect face and blurring
             from .blurring import blurring
-            blurred_image_name = blurring.blurring(image_name, locations)
+            blurred_image_name = blurring.blurring('./' + str(accident_type) + '/' + image_name, locations)
 
             # 3. send image to cloud
             from .send_image import sendImage
