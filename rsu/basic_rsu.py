@@ -30,12 +30,16 @@ AllowedActions = ['both', 'publish', 'subscribe']
 MAX_DISCOVERY_RETRIES = 10
 GROUP_CA_PATH = "./groupCA/"
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-n", "--thing", action="store", required=True, dest="thingName")
+args = parser.parse_args()
+
 host = 'a2twdhxfhzmdtl-ats.iot.ap-northeast-2.amazonaws.com'
 rootCAPath = 'root-ca-cert.pem'
 certificatePath = 'cert.pem'
 privateKeyPath = 'private.key'
-clientId = 'RSU1'
-thingName = 'RSU1'
+clientId = 'RSU' + str(args.thingName)
+thingName = 'RSU' + str(args.thingName)
 topic = 'hello/world/pubsub'
 mode = 'publish'
 
