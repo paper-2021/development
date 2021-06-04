@@ -109,10 +109,10 @@ def customOnMessage(message):
         data_next = [str(obu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
         # 2-2 modify js
         html_file = modify_js.modify_html(False, data_next)
-        with open('display/html/map_normal.html', 'w') as file:
+        with open('display/html/index.html', 'w') as file:
             file.write(html_file)
         # 2-3 제작한 화면 png로 바꾸기
-        htmltopng.change_htmltopng('map_normal.html') 
+        htmltopng.change_htmltopng('index.html') 
         # 2-4 화면 띄우기
         import cv2
         image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
@@ -133,13 +133,14 @@ def customOnMessage(message):
         next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
         end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
         data_next = [str(obu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
-        data_next.append('http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg')
+        #data_next.append('http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg')
+        data_next.append(payload['url'])
         # 2-2 modify js
         html_file = modify_js.modify_html(True, data_next)
-        with open('display/html/map_traffic.html', 'w') as file:
+        with open('index.html', 'w') as file:
             file.write(html_file)
         # 2-3 제작한 화면 png로 바꾸기
-        htmltopng.change_htmltopng('map_traffic.html')
+        htmltopng.change_htmltopng('index.htmll')
         # 2-4 화면 띄우기
         image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
         cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
