@@ -60,7 +60,7 @@ def detect(image_path):
 
     # loop through images in list and run Yolov4 model on each
     for i in range (1):
-        original_image = cv2.imread(images)
+        original_image = io.imread(images)
         original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
 
         image_data = cv2.resize(original_image, (input_size, input_size))
@@ -124,10 +124,9 @@ def detect(image_path):
         #image = Image.fromarray(image.astype(np.uint8))
         #image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
         #cv2.imwrite(output + 'detection' + str(count) + '.png', image)
-    
 
 def obtain_coordinates(img, data):
-    coordinates = [img]
+    coordinates = []
     boxes, scores, classes, num_objects = data
     for i in range(num_objects):
         xmin, ymin,xmax, ymax = boxes[i]
@@ -138,8 +137,8 @@ def detect_ip(image_path):
     print(detect(image_path))
     return detect(image_path)
 
-if __name__ == '__main__':
-    try:
-        detect_ip("./data/images/car.jpg")# image_path
-    except SystemExit:
-        pass
+# if __name__ == '__main__':
+#     try:
+#         detect_ip("./data/images/car.jpg")# image_path
+#     except SystemExit:
+#         pass
