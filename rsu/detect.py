@@ -6,7 +6,6 @@ physical_devices = tf.config.experimental.list_physical_devices('GPU')
 if len(physical_devices) > 0:
     tf.config.experimental.set_memory_growth(physical_devices[0], True)
 from absl import app, flags, logging
-from absl.flags import FLAGS
 import core.utils as utils
 from core.yolov4 import filter_boxes
 from core.functions import *
@@ -16,38 +15,52 @@ import cv2
 import numpy as np
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
+from skimage import io
 
-flags.DEFINE_string('framework', 'tf', '(tf, tflite, trt')
-flags.DEFINE_string('weights', './checkpoints/yolov4-416',
-                    'path to weights file')
-flags.DEFINE_integer('size', 416, 'resize images to')
-flags.DEFINE_boolean('tiny', False, 'yolo or yolo-tiny')
-flags.DEFINE_string('model', 'yolov4', 'yolov3 or yolov4')
-flags.DEFINE_list('images', './data/images/kite.jpg', 'path to input image')
-flags.DEFINE_string('output', './detections/', 'path to output folder')
-flags.DEFINE_float('iou', 0.45, 'iou threshold')
-flags.DEFINE_float('score', 0.50, 'score threshold')
-flags.DEFINE_boolean('info', False, 'print info on detections')
-flags.DEFINE_boolean('crop', False, 'crop detections from images')
-flags.DEFINE_boolean('plate', False, 'perform license plate recognition')
+#flags.DEFINE_string('framework', 'tf', '(tf, tflite, trt')
+#flags.DEFINE_string('weights', './checkpoints/custom-416','path to weights file')
+#flags.DEFINE_integer('size', 416, 'resize images to')
+#flags.DEFINE_boolean('tiny', False, 'yolo or yolo-tiny')
+#flags.DEFINE_string('model', 'yolov4', 'yolov3 or yolov4')
+#flags.DEFINE_list('images', './data/images/car.jpg', 'path to input image')
+#flags.DEFINE_string('output', './detections/', 'path to output folder')
+#flags.DEFINE_float('iou', 0.45, 'iou threshold')
+#flags.DEFINE_float('score', 0.50, 'score threshold')
+#flags.DEFINE_boolean('info', False, 'print info on detections')
+#flags.DEFINE_boolean('crop', False, 'crop detections from images')
+#flags.DEFINE_boolean('plate', False, 'perform license plate recognition')
 
-def main(_argv):
+def detect(image_path):
+    loc_list = []
     config = ConfigProto()
     config.gpu_options.allow_growth = True
     session = InteractiveSession(config=config)
-    STRIDES, ANCHORS, NUM_CLASS, XYSCALE = utils.load_config(FLAGS)
-    input_size = FLAGS.size
-    images = FLAGS.images
+    #STRIDES, ANCHORS, NUM_CLASS, XYSCALE = utils.load_config(FLAGS)
+
+    framework = 'tf'
+    weights = './checkpoints/custom-416'
+    size = 416
+    tiny = False
+    model = 'yolov4'
+    output = './detections/'
+    iou = 0.45
+    score = 0.50
+    info = False
+    crop = False
+    plate = False
+
+    input_size = size
+    images = image_path
 
     # load model
-    if FLAGS.framework == 'tflite':
-            interpreter = tf.lite.Interpreter(model_path=FLAGS.weights)
+    if framework == 'tflite':
+            interpreter = tf.lite.Interpreter(model_path=weights)
     else:
-            saved_model_loaded = tf.saved_model.load(FLAGS.weights, tags=[tag_constants.SERVING])
+            saved_model_loaded = tf.saved_model.load(weights, tags=[tag_constants.SERVING])
 
     # loop through images in list and run Yolov4 model on each
-    for count, image_path in enumerate(images, 1):
-        original_image = cv2.imread(image_path)
+    for i in range (1):
+        original_image = cv2.imread(images)
         original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
 
         image_data = cv2.resize(original_image, (input_size, input_size))
@@ -62,14 +75,14 @@ def main(_argv):
             images_data.append(image_data)
         images_data = np.asarray(images_data).astype(np.float32)
 
-        if FLAGS.framework == 'tflite':
+        if framework == 'tflite':
             interpreter.allocate_tensors()
             input_details = interpreter.get_input_details()
             output_details = interpreter.get_output_details()
             interpreter.set_tensor(input_details[0]['index'], images_data)
             interpreter.invoke()
             pred = [interpreter.get_tensor(output_details[i]['index']) for i in range(len(output_details))]
-            if FLAGS.model == 'yolov3' and FLAGS.tiny == True:
+            if model == 'yolov3' and tiny == True:
                 boxes, pred_conf = filter_boxes(pred[1], pred[0], score_threshold=0.25, input_shape=tf.constant([input_size, input_size]))
             else:
                 boxes, pred_conf = filter_boxes(pred[0], pred[1], score_threshold=0.25, input_shape=tf.constant([input_size, input_size]))
@@ -88,8 +101,8 @@ def main(_argv):
                 pred_conf, (tf.shape(pred_conf)[0], -1, tf.shape(pred_conf)[-1])),
             max_output_size_per_class=50,
             max_total_size=50,
-            iou_threshold=FLAGS.iou,
-            score_threshold=FLAGS.score
+            iou_threshold=iou,
+            score_threshold=score
         )
 
         # format bounding boxes from normalized ymin, xmin, ymax, xmax ---> xmin, ymin, xmax, ymax
@@ -105,19 +118,13 @@ def main(_argv):
         # by default allow all classes in .names file
         allowed_classes = list(class_names.values())
 
-        # if crop flag is enabled, crop each detection and save it as new image
-        if FLAGS.crop:
-            crop_path = os.path.join(os.getcwd(), 'detections', 'crop', image_name)
-            try:
-                os.mkdir(crop_path)
-            except FileExistsError:
-                pass
-            crop_objects(cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB), pred_bbox, crop_path, allowed_classes)
-        image = utils.draw_bbox(original_image, pred_bbox, FLAGS.info, allowed_classes=allowed_classes, read_plate = FLAGS.plate)
-        print(obtain_coordinates(FLAGS.images, pred_bbox))
-        image = Image.fromarray(image.astype(np.uint8))
-        image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
-        cv2.imwrite(FLAGS.output + 'detection' + str(count) + '.png', image)
+        image = utils.draw_bbox(original_image, pred_bbox, info, allowed_classes=allowed_classes, read_plate = plate)
+        loc_list += obtain_coordinates(str(images), pred_bbox)
+    return loc_list
+        #image = Image.fromarray(image.astype(np.uint8))
+        #image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
+        #cv2.imwrite(output + 'detection' + str(count) + '.png', image)
+    
 
 def obtain_coordinates(img, data):
     coordinates = [img]
@@ -127,8 +134,12 @@ def obtain_coordinates(img, data):
         coordinates.append((int(xmin), int(ymin),int(xmax), int(ymax)))
     return coordinates
 
+def detect_ip(image_path):
+    print(detect(image_path))
+    return detect(image_path)
+
 if __name__ == '__main__':
     try:
-        app.run(main)
+        detect_ip("./data/images/car.jpg")# image_path
     except SystemExit:
         pass
