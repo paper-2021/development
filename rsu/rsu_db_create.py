@@ -107,44 +107,52 @@ near = {
   103 : [99, 102]
 }
 
-def create_db() :
+def create_db(rsu_id) :
     try :
-        con = sqlite3.connect(db_name)
+        db_path = './' + rsu_id + '/' + db_name
+        con = sqlite3.connect(db_path)
         cur = con.cursor()
 
         # Create NearRSU table
         cur.execute("CREATE TABLE IF NOT EXISTS NearRSU (rsu_id INTEGER PRIMARY KEY)")
 
         # Create RSUState table
-        cur.execute("CREATE TABLE IF NOT EXISTS RSUState (state_id INTEGER PRIMARY KEY, rsu_id INTEGER, accident_type INTEGER, accident_size INTEGER)")
+        cur.execute("CREATE TABLE IF NOT EXISTS RSUState (state_id INTEGER PRIMARY KEY AUTOINCREMENT, start_rsu INTEGER, end_rsu INTEGER, accident_type INTEGER, accident_size INTEGER)")
 
         # Create OBU table
         cur.execute("CREATE TABLE IF NOT EXISTS OBU (obu_id INTEGER PRIMARY KEY, path TEXT)")
 
         print('create_db success')
     except Exception as e :
-        print(e)
+        print('create db e : ', e)
         print('create_db failed')
     finally :
         con.close()
 
 def insert_NearRSU(rsu_id) :
     try :
+        db_path = './' + rsu_id + '/' + db_name
         print('rsu_id : ', rsu_id)
-        con = sqlite3.connect(db_name)
+        con = sqlite3.connect(db_path)
         cur = con.cursor()
         global near
-        near_rsu_id = near[rsu_id]
+        near_rsu_id = near[int(rsu_id)]
+        print('near_rsu_id array : ', near_rsu_id)
         for _ in near_rsu_id :
             print(_)
             cur.execute(f'INSERT INTO NearRSU VALUES ({_});')
         con.commit()
         print('insert_NearRSU success')
     except Exception as e :
-        print(e)
+        print('insert NearRSU e : ', e)
         print('insert_NearRSU failed')
 
-create_db()
-insert_NearRSU(1)
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-n", "--thing", action="store", required=True, dest="thingName")
+args = parser.parse_args()
+
+create_db(args.thingName)
+insert_NearRSU(args.thingName)
 
 

@@ -2,13 +2,13 @@ import sqlite3
 
 db_file = 'rsu.sqlite3'
 
-def insert_anomaly(rsu, accident_type, accident_size) :
+def insert_anomaly(rsu, start, end, accident_type, accident_size) :
     try :
         path = './' + rsu + '/' + db_file
         conn = sqlite3.connect(db_file)
         cur = conn.cursor()
-        sql = "INSERT INTO RSUState (rsu_id, accident_type, accident_size) VALUES (?, ?, ?);"
-        result = cur.execute(sql, [rsu, accident_type, accident_size])
+        sql = "INSERT INTO RSUState (start_rsu, end_rsu, accident_type, accident_size) VALUES (?, ?, ?, ?);"
+        result = cur.execute(sql, [start, end, accident_type, accident_size])
         conn.commit()
         conn.close()
         return True
@@ -84,6 +84,21 @@ def select_near_obu(rsu) :
         return False
     finally :
         conn.close()
+
+def delete_obu(rsu, obu) :
+    try :
+        path = './' + rsu + '/' + db_file
+        conn = sqlite3.connect(path)
+        cur = conn.cursor()
+        result = cur.execute("DELETE FROM OBU WHERE obu_id = (%d);" %(obu))
+        conn.close()
+        return True
+    except Exception as e :
+        print('delete obu e : ', e)
+        return False
+    finally :
+        conn.close()
+
 
 def db_test(rsu) :
     try :
