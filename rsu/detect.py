@@ -35,7 +35,6 @@ def detect(image_path):
     config = ConfigProto()
     config.gpu_options.allow_growth = True
     session = InteractiveSession(config=config)
-    #STRIDES, ANCHORS, NUM_CLASS, XYSCALE = utils.load_config(FLAGS)
 
     framework = 'tf'
     weights = './checkpoints/custom-416'
@@ -60,7 +59,7 @@ def detect(image_path):
 
     # loop through images in list and run Yolov4 model on each
     for i in range (1):
-        original_image = cv2.imread(images)
+        original_image = io.imread(images)
         original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
 
         image_data = cv2.resize(original_image, (input_size, input_size))
