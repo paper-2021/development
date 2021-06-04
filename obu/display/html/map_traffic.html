@@ -7,7 +7,41 @@
     <link href="css/axure_rp_page.css" type="text/css" rel="stylesheet"/>
     <link href="css/styles.css" type="text/css" rel="stylesheet"/>
     <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=l7xxd8dfb80c3b8d4c70ba275b4615276f7b"></script>
-    <script src="map_js.js">	</script>
+    <script>var map, marker;
+
+function initTmap(){
+    var map = new Tmapv2.Map("map_div",  
+    {
+        center: new Tmapv2.LatLng(37.495, 127.021), 
+        width: "1500px", 
+        height: "700px",
+        zoom: 14
+    });
+    var rsu = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng(37.506, 127.056),
+        map: map
+    });
+    var polyline = new Tmapv2.Polyline({
+        path: [ new Tmapv2.LatLng(37.496, 127.024),
+            new Tmapv2.LatLng(37.506, 127.056),
+                    ],
+        strokeColor: "#dd00dd",
+		strokeWeight: 6,
+		draggable: true, 
+		strokeStyle:'dot', 
+		outline: true,
+		outlineColor:'#ffffff',
+		map: map 
+    });
+
+    var car = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng(37.518, 127.050),
+        icon: "images/page_1/car.png", 
+        map: map 
+    });
+    document.getElementById("u4_png").src = " http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg ";
+} 
+        	</script>
   </head>
   <body onload="initTmap()">
     <div id="base" class="">
@@ -38,7 +72,6 @@
             <p></p>
           </div>
         </div>
-
         <!-- Big Picture (Rectangle) -->
         <div id="u4" class="ax_default shape" data-label="Big Picture">
           <img id="u4_png" src="images/page_1/u4_div.png" width="323" height="218"/>
@@ -47,7 +80,6 @@
             <p></p>
           </div>
         </div>
-
         <!-- Title (Rectangle) -->
         <div id="u5" class="ax_default shape" data-label="Title">
           <div id="u5_div" class=""></div>
@@ -59,3 +91,5 @@
     </div>
   </body>
 </html>
+
+

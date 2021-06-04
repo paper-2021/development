@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# worken cv -> source ~/.profile
+# python 3 ---
+# 37.508379, 127.037166
 import os
 import sys
 import time
@@ -35,7 +38,7 @@ parser = argparse.ArgumentParser()
 
 args = parser.parse_args()
 host = 'a2twdhxfhzmdtl-ats.iot.ap-northeast-2.amazonaws.com' #args.host
-rootCAPath = 'root-ca-cer.pem' #args.rootCAPath
+rootCAPath = 'root-ca-cert.pem' #args.rootCAPath
 certificatePath = '8dc995a116.cert.pem' #args.certificatePath
 privateKeyPath = '8dc995a116.private.key' #args.privateKeyPath
 clientId = 'OBU' #args.thingName
@@ -56,13 +59,25 @@ time_obu = 0
 
 #http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg -> image
 
+def find_obu():
+    global start_time
+    global time_obu
+    if rsu_id == '':
+        return obu_loc
+    if(time.time() - start_time >= time_obu):
+        time_obu = db_obu.select_dis(rsu_id, next_rsu_id)
+        start_time = time.time()
+        rsu_loc = db_obu.select_rsu_loc(rsu_id)
+        return rsu_loc[0]+' ,'+rsu_loc[1]
 
 def customOnMessage(message):
-    global publish_topic
-    global publish_msg
-    #print('Received message on topic %s: %s\n' % (message.topic, message.payload))
+    global rsu_id
+    global next_rsu_id
+    global end_next_rsu_id
+    global obu_loc
     subscribe_topic = message.topic
     payload = json.loads(message.payload)
+    print("=======IN============================"+str(message.payload))
     situation = False # anomaly, True
     if(subscribe_topic == str(obu_id) + '/trigger/obu/start'):
         print('=============%d/trigger/obu/start============='%(obu_id))
@@ -91,7 +106,7 @@ def customOnMessage(message):
         rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
         next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
         end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
-        data_next = [obu_loc, rsu_loc, next_rsu_loc, end_next_rsu_loc] 
+        data_next = [str(obu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
         # 2-2 modify js
         html_file = modify_js.modify_html(False, data_next)
         with open('display/html/map_normal.html', 'w') as file:
@@ -99,6 +114,7 @@ def customOnMessage(message):
         # 2-3 제작한 화면 png로 바꾸기
         htmltopng.change_htmltopng('map_normal.html') 
         # 2-4 화면 띄우기
+        import cv2
         image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
         cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
         cv2.waitKey(0) # time 마다 키 입력사애를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
@@ -116,7 +132,7 @@ def customOnMessage(message):
         rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
         next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
         end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
-        data_next = [obu_loc, rsu_loc, next_rsu_loc, end_next_rsu_loc] 
+        data_next = [str(obu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
         data_next.append('http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg')
         # 2-2 modify js
         html_file = modify_js.modify_html(True, data_next)
@@ -261,15 +277,4 @@ while True:
     except Exception as e:
         print(e)
         print('OBU Error')
-
-def find_obu():
-    if rsu_id == '':
-        return obu_loc
-    if(time.time() - start_time >= time_obu):
-        time_obu = db_obu.select_dis(rsu_id, next_rsu_id)
-        start_time = time.time()
-        return rsu_id
-
-    
-
-
+    time.sleep(3)
