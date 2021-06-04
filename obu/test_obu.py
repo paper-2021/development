@@ -265,7 +265,7 @@ while True:
     try:
         print("Route: %d -> %d" %(rsu_id, next_rsu_id))
         # find next rsu
-        if(time.time() - start_time >= time_obu):
+        if(time_obu != 0 and time.time() - start_time >= time_obu):
             print("======= Start content next RSU %d" %(next_rsu_id))
             # make message
             message = {}
