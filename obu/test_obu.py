@@ -47,7 +47,7 @@ topic = 'hello/world/pubsub' #args.topic
 args.mode = 'publish'
 args.message = 'Start'
 obu_id = 1
-obu_loc = '' # NOTE start obu 위치 여기 넣기
+obu_loc = '37.508379, 127.037166' # NOTE start obu 위치 여기 넣기
 publish_topic = []
 publish_msg = []
 rsu_id = ''
@@ -79,8 +79,8 @@ def customOnMessage(message):
     payload = json.loads(message.payload)
     print("=======IN============================"+str(message.payload))
     situation = False # anomaly, True
-    if(subscribe_topic == str(obu_id) + '/trigger/obu/start'):
-        print('=============%d/trigger/obu/start============='%(obu_id))
+    if(subscribe_topic == '/obu/start'):
+        print('=============obu/start============='%(obu_id))
         # 1. regiter rsu
         message = {}
         rsu_id = ''
@@ -89,7 +89,7 @@ def customOnMessage(message):
         # 1-1 obu location에서 담당하는 rsu_id 찾기
         obu_loc = find_obu() #ex: '37.518, 127.050'
         rsu_id = db_obu.select_start(obu_loc) #ex: 9
-        message['destination'] = ('위도', '경도') # input 목적지, (65)ex: 37.493, 127.013 
+        message['destination'] = 78 # input 목적지 node 
         # 1-2 send mqtt
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
@@ -263,7 +263,7 @@ while True:
     print("=========== OBU Start ===========")
     myAWSIoTMQTTClient.publish('trigger/start', 'Start', 0)
     try:
-        print("Route: %d -> %d" %(rsu_id, next_rsu_id))
+        print("Route: %s -> %s" %(rsu_id, next_rsu_id))
         # find next rsu
         if(time_obu != 0 and time.time() - start_time >= time_obu):
             print("======= Start content next RSU %d" %(next_rsu_id))
