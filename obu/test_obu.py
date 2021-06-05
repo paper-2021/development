@@ -280,7 +280,6 @@ while True:
         if(rsu_id != '' and next_rsu_id != ''):
             print("======================== Route: %s -> %s ========================" %(rsu_id, next_rsu_id))
         # find next rsu
-        print(time_obu, start_time)
         if(time_obu != 0 and time.time() - start_time >= time_obu):
             print("======================== Start connect next RSU %s" %(next_rsu_id))
             # make message
