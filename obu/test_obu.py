@@ -58,6 +58,7 @@ route = ""
 start_time = 0
 time_obu = 0
 rsu_loc = ''
+check = True
 
 #http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg -> image
 
@@ -100,6 +101,7 @@ def customOnMessage(message):
         print("=============Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register=============')
     elif(subscribe_topic == 'obu/register'):
         print('=============obu/register=============')
+        check = True
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         next_rsu_id = payload['start'] #(9)ex: '37.518, 127.050'
@@ -136,7 +138,7 @@ def customOnMessage(message):
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         rsu_list = [rsu_id, next_rsu_id, end_next_rsu_id]
-        print("=============rsu_list: %s" %(str(rsu_list)))
+        #print("=============rsu_list: %s" %(str(rsu_list)))
         if(payload['start'] in rsu_list or payload['end'] in rsu_list):
             print('=============In obu/anomaly=============')
             link_loc = db_obu.find_link(payload['start'],payload['end'])
@@ -289,8 +291,10 @@ while True:
             message['obu_id'] = obu_id
             # send mqtt
             messageJson = json.dumps(message)
-            myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
-            print("========================Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register========================')
+            if(check):
+                myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
+                check = False
+                print("========================Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register========================')
     except Exception as e:
         print(e)
         print('OBU Error')
