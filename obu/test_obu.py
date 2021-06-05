@@ -92,7 +92,8 @@ def customOnMessage(message):
         # 1-1 obu location에서 담당하는 rsu_id 찾기
         obu_loc = find_obu() #ex: '37.518, 127.050'
         rsu_id = db_obu.select_start(obu_loc) #ex: 9
-        message['destination'] = destination # input 목적지 node 
+        message['destination'] = destination # input 목적지 node
+        modify_js.set_loc(obu_loc, db_obu.select_rsu_loc(destination)) #set start, end
         # 1-2 send mqtt
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
@@ -131,17 +132,10 @@ def customOnMessage(message):
         print('=============obu/anomaly=============')
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
-        next_rsu_id = payload['start'] #(9)ex: '37.518, 127.050'
-        end_next_rsu_id = payload['end'] 
-        obu_loc = find_obu() #ex: '37.518, 127.050', # 현재 OBU 위치 받기
-        rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
-        next_rsu_loc = db_obu.select_rsu_loc(next_rsu_id)
-        end_next_rsu_loc = db_obu.select_rsu_loc(end_next_rsu_id)
-        rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
-        next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
+        link_loc = db_obu.find_link(payload['start'],payload['end'])
+        link_loc = link_loc[0]+', ' + link_loc[1]
         end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
-        data_next = [str(obu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
-        #data_next.append('http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg')
+        data_next = [str(obu_loc), str(link_loc), str(0)] 
         data_next.append(payload['url'])
         # 2-2 modify js
         html_file = modify_js.modify_html(True, data_next)

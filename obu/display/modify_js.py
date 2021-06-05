@@ -1,22 +1,34 @@
 route = ""
+departure = ''
+arrival = ''
+next_route = ''
 
 def init_map():
     route = ""
 
-def modify_html(situation, data):
+def set_loc(de, a):
+  global departure
+  global arrival
+  departure = de
+  arrival = a
+
+
+def modify_html(situation, data): #FIX 출발지, 도착지 추가
     """ # NOTE
     data
     situation : false -> [obu_loc, start_loc, end_loc, end_next_loc]
-    situation : true  -> [obu_loc, start_loc, end_loc, , end_next_loc, imagename]
+    situation : true  -> [obu_loc, link_loc, 0, imagename]
     """
     js_file = ''
     global route
-    route += """new Tmapv2.LatLng("""+data[1]+ """),
-            new Tmapv2.LatLng(""" + data[2] + """),
-            """
-    next_route = """new Tmapv2.LatLng("""+data[2]+ """),
-            new Tmapv2.LatLng(""" + data[3] + """),
-            """
+    global next_route
+    if(data[2] !='0'):
+      route += """new Tmapv2.LatLng("""+data[1]+ """),
+              new Tmapv2.LatLng(""" + data[2] + """),
+              """
+      next_route = """new Tmapv2.LatLng("""+data[2]+ """),
+              new Tmapv2.LatLng(""" + data[3] + """),
+              """
     if(situation):
         js_file = """var map, marker;
 
@@ -29,8 +41,18 @@ function initTmap(){
         zoom: 13
     });
     var rsu = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng(""" + data[2]+ """),
+        position: new Tmapv2.LatLng(""" + data[1]+ """),
         icon: "images/page_1/rsu.png", 
+        map: map
+    });
+    var A = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng(""" + arrival+ """),
+        icon: "images/page_1/A.png", 
+        map: map
+    });
+    var D = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng(""" + departure+ """),
+        icon: "images/page_1/D.png", 
         map: map
     });
     var polyline = new Tmapv2.Polyline({
@@ -44,7 +66,7 @@ function initTmap(){
 		map: map 
     });
     var polyline = new Tmapv2.Polyline({
-        path: [ """ + next_route + """        ],
+        path: [ """ + next_route + """  ],
         strokeColor: "#0000FF",
 		strokeWeight: 6,
 		draggable: true, 
@@ -59,7 +81,7 @@ function initTmap(){
         icon: "images/page_1/car.png", 
         map: map 
     });
-    document.getElementById("u4_png").src = " """+ data[4]+ """ ";
+    document.getElementById("u4_png").src = " """+ data[3]+ """ ";
 } 
         """
         html_file = """<!DOCTYPE html>
@@ -161,6 +183,16 @@ function initTmap(){
         position: new Tmapv2.LatLng("""+data[0]+""" ),
         icon: "images/page_1/car.png", 
         map: map 
+    });
+    var A = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng(""" + arrival+ """),
+        icon: "images/page_1/A.png", 
+        map: map
+    });
+    var D = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng(""" + departure+ """),
+        icon: "images/page_1/D.png", 
+        map: map
     });
 }
 """
