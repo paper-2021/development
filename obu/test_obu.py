@@ -133,7 +133,7 @@ def customOnMessage(message):
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         link_loc = db_obu.find_link(payload['start'],payload['end'])
-        link_loc = link_loc[0]+', ' + link_loc[1]
+        link_loc = str(link_loc[0])+', ' + str(link_loc[1])
         end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
         data_next = [str(obu_loc), str(link_loc), str(0)] 
         data_next.append(payload['url'])
