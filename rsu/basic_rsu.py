@@ -49,7 +49,7 @@ publish_msg = []
 cloud_upload_url = 'http://3.35.184.173:8000/upload/'
 
 # 알고리즘 도로 정보 초기화
-from .pathfinding import call_astar as astar
+from pathfinding import call_astar as astar
 global nodes
 nodes = astar.call_astar()
 # from pathfinding import call_dijkstra
@@ -76,24 +76,27 @@ def customOnMessage(message):
             accident_size = payload['accident_size']
             image_name = payload['image_name']
             basic_image_path = './blurring/' + str(accident_type) + '/'
+            print(f'start_rsu : {start_rsu}, end_rsu : {end_rsu}, accident_type : {accident_type}, accident_size : {accident_size}, image_name : {image_name}')
 
             # 1. detect license plate
-            from .blurring import detect
-            locations = detect.detect_ip('./' + str(accident_type) + '/' + image_name)
-            locations = locations[1:]
-            print('locations : ', locations)
+            # from blurring import detect
+            # locations = detect.detect_ip('./' + str(accident_type) + '/' + image_name)
+            # locations = locations[1:]
+            # print('locations : ', locations)
+
+            locations = [(118.0, 258.0, 201.0, 290.0)]
 
             # 2. detect face and blurring
-            from .blurring import blurring
-            blurred_image_name = blurring.blurring('./' + str(accident_type) + '/' + image_name, locations)
+            from blurring import blurring
+            blurred_image_name = blurring.blurring('/home/pi/rsu' + str(rsu) + '/blurring/' + str(accident_type) + '/' + image_name, locations)
 
             # 3. send image to cloud
-            from .send_image import sendImage
-            cloud_image_name = sendImage(basic_image_path + blurred_image_name) # parameter : image name
+            from send_image import sendImage
+            cloud_image_name = sendImage('/home/pi/rsu' + str(rsu) + '/blurring/' + str(accident_type) + '/' + blurred_image_name) # parameter : image name
             print('cloud_image_name : ', cloud_image_name)
 
             # 4. insert into RSUState
-            result = rsu_db.insert_anomaly(rsu, start_rsu, end_rsu, accident_type, accident_size)
+            result = rsu_db.insert_anomaly(str(rsu), start_rsu, end_rsu, accident_type, accident_size)
             print('insert_anomaly result : ', result)
 
             # 5. change links weight
