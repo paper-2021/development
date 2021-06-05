@@ -68,7 +68,6 @@ def find_obu():
         return obu_loc
     if(time.time() - start_time >= time_obu):
         time_obu = db_obu.select_dis(rsu_id, next_rsu_id) *10
-        print("=====find_obu==========%f============" %(time_obu))
         start_time = time.time()
         return rsu_loc
 
@@ -81,7 +80,7 @@ def customOnMessage(message):
     global rsu_loc
     subscribe_topic = message.topic
     payload = json.loads(message.payload)
-    print("=======IN============================"+str(message.payload))
+    print("=============IN============="+str(message.payload))
     situation = False # anomaly, True
     if(subscribe_topic == 'obu/start'):
         print('=============obu/start=============')
@@ -98,7 +97,7 @@ def customOnMessage(message):
         # 1-2 send mqtt
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
-        print("===========Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register===========')
+        print("=============Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register=============')
     elif(subscribe_topic == 'obu/register'):
         print('=============obu/register=============')
         # 2. show alarm
@@ -107,7 +106,7 @@ def customOnMessage(message):
         end_next_rsu_id = payload['end'] 
         if(next_rsu_id == end_next_rsu_id and destination == next_rsu_id):
             print("============= Arrive =============")
-            quit()
+            sys.exit()
         time_obu = db_obu.select_dis(rsu_id, next_rsu_id) 
         #ex: '37.518, 127.050', # 현재 OBU 위치 받기
         rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
@@ -135,9 +134,9 @@ def customOnMessage(message):
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         rsu_list = [rsu_id, next_rsu_id, end_next_rsu_id]
-        print("================== rsu_list: %s" %(str(rsu_list)))
+        print("=============rsu_list: %s" %(str(rsu_list)))
         if(payload['start'] in rsu_list or payload['end'] in rsu_list):
-            print('********************In obu/anomaly************************')
+            print('=============In obu/anomaly=============')
             link_loc = db_obu.find_link(payload['start'],payload['end'])
             link_loc = str(link_loc[0])+', ' + str(link_loc[1])
             end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
@@ -177,12 +176,14 @@ if not os.path.isfile(privateKeyPath):
     exit(3)
 
 # Configure logging
+"""
 logger = logging.getLogger("AWSIoTPythonSDK.core")
 logger.setLevel(logging.DEBUG)
 streamHandler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
+"""
 
 # Progressive back off core
 backOffCore = ProgressiveBackOffCore()
@@ -268,14 +269,14 @@ time.sleep(2)
 
 loopCount = 0
 while True:
-    print("========================")
+    print("================================================")
     myAWSIoTMQTTClient.publish('trigger/start', 'Start', 0)
     try:
-        print("=============== Route: %s -> %s" %(rsu_id, next_rsu_id))
+        print("======================== Route: %s -> %s ========================" %(rsu_id, next_rsu_id))
         # find next rsu
         print(time_obu, start_time)
         if(time_obu != 0 and time.time() - start_time >= time_obu):
-            print("======= Start content next RSU %s" %(next_rsu_id))
+            print("======================== Start connect next RSU %s" %(next_rsu_id))
             # make message
             message = {}
             rsu_id = next_rsu_id
@@ -284,7 +285,7 @@ while True:
             # send mqtt
             messageJson = json.dumps(message)
             myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
-            print("===========Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register===========')
+            print("========================Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register========================')
     except Exception as e:
         print(e)
         print('OBU Error')

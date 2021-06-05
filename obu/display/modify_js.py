@@ -169,7 +169,7 @@ function initTmap(){
 		map: map 
     });
     var polyline = new Tmapv2.Polyline({
-        path: [ """ + next_route + """        ],
+        path: [ """ + next_route + """ ],
         strokeColor: "#0000FF",
 		strokeWeight: 6,
 		draggable: true, 
