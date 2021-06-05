@@ -14,7 +14,9 @@ def modify_html(situation, data):
     route += """new Tmapv2.LatLng("""+data[1]+ """),
             new Tmapv2.LatLng(""" + data[2] + """),
             """
-    next_route = """new Tmapv2.LatLng(""" + data[3] + """),"""
+    next_route = """new Tmapv2.LatLng("""+data[2]+ """),
+            new Tmapv2.LatLng(""" + data[3] + """),
+            """
     if(situation):
         js_file = """var map, marker;
 
@@ -33,7 +35,17 @@ function initTmap(){
     });
     var polyline = new Tmapv2.Polyline({
         path: [ """ + route + """        ],
-        strokeColor: "#dd00dd",
+        strokeColor: "#FF82FF",
+		strokeWeight: 6,
+		draggable: true, 
+		strokeStyle:'dot', 
+		outline: true,
+		outlineColor:'#ffffff',
+		map: map 
+    });
+    var polyline = new Tmapv2.Polyline({
+        path: [ """ + next_route + """        ],
+        strokeColor: "#32AAFF",
 		strokeWeight: 6,
 		draggable: true, 
 		strokeStyle:'dot', 
@@ -125,8 +137,18 @@ function initTmap(){
     });
     
     var polyline = new Tmapv2.Polyline({
-        path: ["""+ route + """],
-        strokeColor: "#dd00dd",
+        path: [ """ + route + """        ],
+        strokeColor: "#FF82FF",
+		strokeWeight: 6,
+		draggable: true, 
+		strokeStyle:'dot', 
+		outline: true,
+		outlineColor:'#ffffff',
+		map: map 
+    });
+    var polyline = new Tmapv2.Polyline({
+        path: [ """ + next_route + """        ],
+        strokeColor: "#32AAFF",
 		strokeWeight: 6,
 		draggable: true, 
 		strokeStyle:'dot', 
