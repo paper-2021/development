@@ -104,10 +104,10 @@ def db_test(rsu) :
         path = './' + rsu + '/' + db_file
         conn = sqlite3.connect(path)
         cur = conn.cursor()
-        result = cur.execute("SELECT * FROM RSUState;").fetchall()
-        # near = [x[0] for x in result]
+        result = cur.execute("SELECT * FROM NearRSU;").fetchall()
+        near = [x[0] for x in result]
         conn.close()
-        return True
+        return near
     except Exception as e :
         print('db test e : ', e)
         return False

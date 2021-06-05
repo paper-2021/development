@@ -142,8 +142,8 @@ def customOnMessage(message):
                 print('register_obu result : ', result)
             
             now_idx = path.index(str(rsu))
-            if(now_idx >= len(path) - 2) :
-                start = end = path[now_idx]
+            if(now_idx == len(path) - 2) :
+                start = end = path[now_idx + 1]
             else :
                 start, end = path[now_idx + 1], path[now_idx + 2]
 
@@ -206,10 +206,8 @@ def customOnMessage(message):
             # 3. send obu info to next rsu - mqtt publish (obu/register)
             path_list = path.split(',')
             now_idx = path_list.index(str(rsu))
-            if(now_idx == len(path_list) - 1) :
-                start = end = path_list[now_idx]
-            elif(now_idx == len(path_list) - 2) :
-                start = end = path_list[now_idx]
+            if(now_idx == len(path) - 2) :
+                start = end = path_list[now_idx + 1]
             else :
                 start, end = path_list[now_idx + 1], path_list[now_idx + 2]
 
@@ -219,15 +217,16 @@ def customOnMessage(message):
             message['obu_id'] = payload['obu_id']
             message['start'] = start
             message['end'] = end
+            message['path'] = path
             messageJson = json.dumps(message)
             publish_msg.append(messageJson)
 
-            publish_topic.append('obu/register')
-            message = {}
-            message['start'] = start 
-            message['end'] = end
-            messageJson = json.dumps(message)
-            publish_msg.append(messageJson)
+            # publish_topic.append('obu/register')
+            # message = {}
+            # message['start'] = start 
+            # message['end'] = end
+            # messageJson = json.dumps(message)
+            # publish_msg.append(messageJson)
 
             # 5. delete obu info
             result = rsu_db.delete_obu(rsu, payload['obu_id'])
