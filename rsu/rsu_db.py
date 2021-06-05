@@ -5,10 +5,9 @@ db_file = 'rsu.sqlite3'
 def insert_anomaly(rsu, start, end, accident_type, accident_size) :
     try :
         path = './' + rsu + '/' + db_file
-        conn = sqlite3.connect(db_file)
+        conn = sqlite3.connect(path)
         cur = conn.cursor()
-        sql = "INSERT INTO RSUState (start_rsu, end_rsu, accident_type, accident_size) VALUES (?, ?, ?, ?);"
-        result = cur.execute(sql, [start, end, accident_type, accident_size])
+        result = cur.execute("INSERT INTO RSUState (start_rsu, end_rsu, accident_type, accident_size) VALUES (%d, %d, %d, %d);" % (start, end, accident_type, accident_size))
         conn.commit()
         conn.close()
         return True
@@ -105,10 +104,10 @@ def db_test(rsu) :
         path = './' + rsu + '/' + db_file
         conn = sqlite3.connect(path)
         cur = conn.cursor()
-        result = cur.execute("SELECT rsu_id FROM NearRSU;").fetchall()
-        near = [x[0] for x in result]
+        result = cur.execute("SELECT * FROM RSUState;").fetchall()
+        # near = [x[0] for x in result]
         conn.close()
-        return near
+        return True
     except Exception as e :
         print('db test e : ', e)
         return False

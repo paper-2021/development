@@ -7,6 +7,7 @@ url = 'http://3.35.184.173:8000/image'
 def sendImage(image_path):
     try:
         import requests
+        print('sendImage image_path : ', image_path)
         headers = {
             'accept': 'application/json'
         }
