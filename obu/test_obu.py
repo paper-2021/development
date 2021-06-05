@@ -116,7 +116,8 @@ def customOnMessage(message):
         obu_loc = find_obu()
         next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
         end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
-        data_next = [str(obu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
+        data_next = [str(rsu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
+        obu_loc = rsu_loc
         # 2-2 modify js
         html_file = modify_js.modify_html(False, data_next)
         with open('display/html/index.html', 'w') as file:
