@@ -70,7 +70,6 @@ def find_obu():
         time_obu = db_obu.select_dis(rsu_id, next_rsu_id) *10
         print("=====find_obu==========%f============" %(time_obu))
         start_time = time.time()
-        rsu_loc = db_obu.select_rsu_loc(rsu_id)
         return rsu_loc
 
 def customOnMessage(message):
@@ -129,15 +128,16 @@ def customOnMessage(message):
         #import cv2
         #image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
         #cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
-        #cv2.waitKey(0) # time 마다 키 입력사애를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
+        #cv2.waitKey(0) # time 마다 키 입력상에를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
         #cv2.destroyAllWindows() # 모든 윈도우창을 닫는다.
     elif(subscribe_topic == 'obu/anomaly'): # TEST
         print('=============obu/anomaly=============')
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         rsu_list = [rsu_id, next_rsu_id, end_next_rsu_id]
+        print("================== rsu_list: %s" %(str(rsu_list)))
         if(payload['start'] in rsu_list or payload['end'] in rsu_list):
-            print('================In obu/anomaly========================')
+            print('********************In obu/anomaly************************')
             link_loc = db_obu.find_link(payload['start'],payload['end'])
             link_loc = str(link_loc[0])+', ' + str(link_loc[1])
             end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
