@@ -56,16 +56,6 @@ function initTmap(){
         map: map
     });
     var polyline = new Tmapv2.Polyline({
-        path: [ """ + route + """        ],
-        strokeColor: "#FF1E9D",
-		strokeWeight: 6,
-		draggable: true, 
-		strokeStyle:'dot', 
-		outline: true,
-		outlineColor:'#ffffff',
-		map: map 
-    });
-    var polyline = new Tmapv2.Polyline({
         path: [ """ + next_route + """  ],
         strokeColor: "#0000FF",
 		strokeWeight: 6,
@@ -75,6 +65,17 @@ function initTmap(){
 		outlineColor:'#ffffff',
 		map: map 
     });
+    var polyline = new Tmapv2.Polyline({
+        path: [ """ + route + """        ],
+        strokeColor: "#FF1E9D",
+		strokeWeight: 6,
+		draggable: true, 
+		strokeStyle:'dot', 
+		outline: true,
+		outlineColor:'#ffffff',
+		map: map 
+    });
+   
 
     var car = new Tmapv2.Marker({
         position: new Tmapv2.LatLng("""+data[0]+"""),
@@ -157,17 +158,6 @@ function initTmap(){
         height: "500px",
         zoom: 13
     });
-    
-    var polyline = new Tmapv2.Polyline({
-        path: [ """ + route + """        ],
-        strokeColor: "#FF1E9D",
-		strokeWeight: 6,
-		draggable: true, 
-		strokeStyle:'dot', 
-		outline: true,
-		outlineColor:'#ffffff',
-		map: map 
-    });
     var polyline = new Tmapv2.Polyline({
         path: [ """ + next_route + """ ],
         strokeColor: "#0000FF",
@@ -179,6 +169,17 @@ function initTmap(){
 		map: map 
     });
 
+    var polyline = new Tmapv2.Polyline({
+        path: [ """ + route + """        ],
+        strokeColor: "#FF1E9D",
+		strokeWeight: 6,
+		draggable: true, 
+		strokeStyle:'dot', 
+		outline: true,
+		outlineColor:'#ffffff',
+		map: map 
+    });
+    
     var car = new Tmapv2.Marker({
         position: new Tmapv2.LatLng("""+data[0]+""" ),
         icon: "images/page_1/car.png", 

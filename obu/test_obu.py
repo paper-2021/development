@@ -104,9 +104,7 @@ def customOnMessage(message):
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         next_rsu_id = payload['start'] #(9)ex: '37.518, 127.050'
         end_next_rsu_id = payload['end'] 
-        if(next_rsu_id == end_next_rsu_id and destination == next_rsu_id):
-            print("============= Arrive =============")
-            sys.exit()
+        
         time_obu = db_obu.select_dis(rsu_id, next_rsu_id) 
         #ex: '37.518, 127.050', # 현재 OBU 위치 받기
         rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
@@ -122,6 +120,9 @@ def customOnMessage(message):
         html_file = modify_js.modify_html(False, data_next)
         with open('display/html/index.html', 'w') as file:
             file.write(html_file)
+        if(next_rsu_id == end_next_rsu_id and destination == next_rsu_id):
+            print("============= Arrival =============")
+            os._exit(1)
         # 2-3 제작한 화면 png로 바꾸기
         #htmltopng.change_htmltopng('index.html') 
         # 2-4 화면 띄우기
@@ -130,7 +131,7 @@ def customOnMessage(message):
         #cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
         #cv2.waitKey(0) # time 마다 키 입력상에를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
         #cv2.destroyAllWindows() # 모든 윈도우창을 닫는다.
-    elif(subscribe_topic == 'obu/anomaly'): # TEST
+    elif(subscribe_topic == 'obu/anomaly'):
         print('=============obu/anomaly=============')
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
@@ -273,7 +274,11 @@ while True:
     print("================================================")
     myAWSIoTMQTTClient.publish('trigger/start', 'Start', 0)
     try:
-        print("======================== Route: %s -> %s ========================" %(rsu_id, next_rsu_id))
+        if(next_rsu_id == end_next_rsu_id and destination == next_rsu_id):
+            #print("============= Arrive =============")
+            break
+        if(rsu_id != '' and next_rsu_id != ''):
+            print("======================== Route: %s -> %s ========================" %(rsu_id, next_rsu_id))
         # find next rsu
         print(time_obu, start_time)
         if(time_obu != 0 and time.time() - start_time >= time_obu):
