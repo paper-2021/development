@@ -21,13 +21,14 @@ def modify_html(situation, data):
 function initTmap(){
     var map = new Tmapv2.Map("map_div",  
     {
-        center: new Tmapv2.LatLng(37.498, 127.031), 
-        width: "1500px", 
-        height: "700px",
+        center: new Tmapv2.LatLng(37.510, 127.043), 
+        width: "800px", 
+        height: "500px",
         zoom: 13
     });
     var rsu = new Tmapv2.Marker({
         position: new Tmapv2.LatLng(""" + data[2]+ """),
+        icon: "images/page_1/rsu.png", 
         map: map
     });
     var polyline = new Tmapv2.Polyline({
@@ -43,7 +44,7 @@ function initTmap(){
 
     var car = new Tmapv2.Marker({
         position: new Tmapv2.LatLng("""+data[0]+"""),
-        icon: "display/images/page_1/car.png", 
+        icon: "images/page_1/car.png", 
         map: map 
     });
     document.getElementById("u4_png").src = " """+ data[4]+ """ ";
@@ -117,9 +118,9 @@ var map, marker;
 function initTmap(){
     var map = new Tmapv2.Map("map_div",  
     {
-        center: new Tmapv2.LatLng(37.498, 127.031), 
-        width: "1500px", 
-        height: "700px",
+        center: new Tmapv2.LatLng(37.510, 127.043), 
+        width: "800px", 
+        height: "500px",
         zoom: 13
     });
     
@@ -135,7 +136,7 @@ function initTmap(){
     });
 
     var car = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng(" """+data[0]+""" "),
+        position: new Tmapv2.LatLng("""+data[0]+""" ),
         icon: "display/images/page_1/car.png", 
         map: map 
     });
