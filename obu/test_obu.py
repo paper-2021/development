@@ -105,7 +105,7 @@ def customOnMessage(message):
         end_next_rsu_id = payload['end'] 
         if(next_rsu_id == end_next_rsu_id and destination == next_rsu_id):
             print("============= Arrive =============")
-            exit()
+            quit()
         time_obu = db_obu.select_dis(rsu_id, next_rsu_id) 
         obu_loc = find_obu() #ex: '37.518, 127.050', # 현재 OBU 위치 받기
         rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'

@@ -159,7 +159,7 @@ function initTmap(){
 
     var car = new Tmapv2.Marker({
         position: new Tmapv2.LatLng("""+data[0]+""" ),
-        icon: "display/images/page_1/car.png", 
+        icon: "images/page_1/car.png", 
         map: map 
     });
 }
