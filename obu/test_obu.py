@@ -79,6 +79,7 @@ def customOnMessage(message):
     global obu_loc
     global destination
     global rsu_loc
+    global check
     subscribe_topic = message.topic
     payload = json.loads(message.payload)
     print("=============IN============="+str(message.payload))
