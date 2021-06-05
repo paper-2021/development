@@ -9,7 +9,7 @@ def init_map():
 def set_loc(de, a):
   global departure
   global arrival
-  departure = de[0]+', '+de[1]
+  departure = de
   arrival = a[0]+', '+a[1]
 
 

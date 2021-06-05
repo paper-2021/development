@@ -57,6 +57,7 @@ end_next_rsu_id = ''
 route = ""
 start_time = 0
 time_obu = 0
+rsu_loc = ''
 
 #http://3.35.184.173:8000/upload/3/20210507212215_3_accident.jpg -> image
 
@@ -70,7 +71,7 @@ def find_obu():
         print("=====find_obu==========%f============" %(time_obu))
         start_time = time.time()
         rsu_loc = db_obu.select_rsu_loc(rsu_id)
-        return rsu_loc[0]+' ,'+rsu_loc[1]
+        return rsu_loc
 
 def customOnMessage(message):
     global rsu_id
@@ -78,6 +79,7 @@ def customOnMessage(message):
     global end_next_rsu_id
     global obu_loc
     global destination
+    global rsu_loc
     subscribe_topic = message.topic
     payload = json.loads(message.payload)
     print("=======IN============================"+str(message.payload))
@@ -108,11 +110,12 @@ def customOnMessage(message):
             print("============= Arrive =============")
             quit()
         time_obu = db_obu.select_dis(rsu_id, next_rsu_id) 
-        obu_loc = find_obu() #ex: '37.518, 127.050', # 현재 OBU 위치 받기
+        #ex: '37.518, 127.050', # 현재 OBU 위치 받기
         rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
         next_rsu_loc = db_obu.select_rsu_loc(next_rsu_id)
         end_next_rsu_loc = db_obu.select_rsu_loc(end_next_rsu_id)
         rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
+        obu_loc = find_obu()
         next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
         end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
         data_next = [str(obu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
@@ -132,15 +135,18 @@ def customOnMessage(message):
         print('=============obu/anomaly=============')
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
-        link_loc = db_obu.find_link(payload['start'],payload['end'])
-        link_loc = str(link_loc[0])+', ' + str(link_loc[1])
-        end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
-        data_next = [str(obu_loc), str(link_loc), str(0)] 
-        data_next.append(payload['url'])
-        # 2-2 modify js
-        html_file = modify_js.modify_html(True, data_next)
-        with open('index.html', 'w') as file:
-            file.write(html_file)
+        rsu_list = [rsu_id, next_rsu_id, end_next_rsu_id]
+        if(payload['start'] in rsu_list or payload['end'] in rsu_list):
+            print('================In obu/anomaly========================')
+            link_loc = db_obu.find_link(payload['start'],payload['end'])
+            link_loc = str(link_loc[0])+', ' + str(link_loc[1])
+            end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
+            data_next = [str(obu_loc), str(link_loc), str(0)] 
+            data_next.append(payload['url'])
+            # 2-2 modify js
+            html_file = modify_js.modify_html(True, data_next)
+            with open('index.html', 'w') as file:
+                file.write(html_file)
         # 2-3 제작한 화면 png로 바꾸기
         #htmltopng.change_htmltopng('index.htmll')
         # 2-4 화면 띄우기

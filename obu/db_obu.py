@@ -63,5 +63,5 @@ def find_link(start, end):
         con.close
 
 
-#print(select_rsu_loc('55'))
+print(select_rsu_loc('78'))
 #print(select_start('37.508, 127.037'))
