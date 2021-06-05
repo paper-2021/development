@@ -35,7 +35,7 @@ function initTmap(){
     });
     var polyline = new Tmapv2.Polyline({
         path: [ """ + route + """        ],
-        strokeColor: "#FF82FF",
+        strokeColor: "#FF1E9D",
 		strokeWeight: 6,
 		draggable: true, 
 		strokeStyle:'dot', 
@@ -45,7 +45,7 @@ function initTmap(){
     });
     var polyline = new Tmapv2.Polyline({
         path: [ """ + next_route + """        ],
-        strokeColor: "#32AAFF",
+        strokeColor: "#0000FF",
 		strokeWeight: 6,
 		draggable: true, 
 		strokeStyle:'dot', 
@@ -138,7 +138,7 @@ function initTmap(){
     
     var polyline = new Tmapv2.Polyline({
         path: [ """ + route + """        ],
-        strokeColor: "#FF82FF",
+        strokeColor: "#FF1E9D",
 		strokeWeight: 6,
 		draggable: true, 
 		strokeStyle:'dot', 
@@ -148,7 +148,7 @@ function initTmap(){
     });
     var polyline = new Tmapv2.Polyline({
         path: [ """ + next_route + """        ],
-        strokeColor: "#32AAFF",
+        strokeColor: "#0000FF",
 		strokeWeight: 6,
 		draggable: true, 
 		strokeStyle:'dot', 

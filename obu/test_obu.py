@@ -96,6 +96,7 @@ def customOnMessage(message):
         # 1-2 send mqtt
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
+        print("===========Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register===========')
     elif(subscribe_topic == 'obu/register'):
         print('=============obu/register=============')
         # 2. show alarm
@@ -105,7 +106,6 @@ def customOnMessage(message):
         if(next_rsu_id == end_next_rsu_id and destination == next_rsu_id):
             print("============= Arrive =============")
             exit()
-        print("=======Changed===========> rsu_id: %s, =========== next_rsu_id: %s ========="%(rsu_id ,next_rsu_id))
         time_obu = db_obu.select_dis(rsu_id, next_rsu_id) 
         obu_loc = find_obu() #ex: '37.518, 127.050', # 현재 OBU 위치 받기
         rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
@@ -207,7 +207,6 @@ while retryCount != 0:
         groupId, ca = caList[0]
         coreInfo = coreList[0]
         print("Discovered GGC: %s from Group: %s" % (coreInfo.coreThingArn, groupId))
-
         print("Now we persist the connectivity/identity information...")
         groupCA = GROUP_CA_PATH + groupId + "_CA_" + str(uuid.uuid4()) + ".crt"
         if not os.path.exists(GROUP_CA_PATH):
@@ -272,7 +271,7 @@ while True:
     print("========================")
     myAWSIoTMQTTClient.publish('trigger/start', 'Start', 0)
     try:
-        print("Route: %s -> %s" %(rsu_id, next_rsu_id))
+        print("=============== Route: %s -> %s" %(rsu_id, next_rsu_id))
         # find next rsu
         print(time_obu, start_time)
         if(time_obu != 0 and time.time() - start_time >= time_obu):
@@ -285,6 +284,7 @@ while True:
             # send mqtt
             messageJson = json.dumps(message)
             myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
+            print("===========Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register===========')
     except Exception as e:
         print(e)
         print('OBU Error')
