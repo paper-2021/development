@@ -9,8 +9,8 @@ def init_map():
 def set_loc(de, a):
   global departure
   global arrival
-  departure = de
-  arrival = a
+  departure = de[0]+', '+de[1]
+  arrival = a[0]+', '+a[1]
 
 
 def modify_html(situation, data): #FIX 출발지, 도착지 추가
