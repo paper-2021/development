@@ -125,7 +125,7 @@ def customOnMessage(message):
             publish_msg.append(messageJson)
 
         elif(topic_split[2] == 'obu') : # /trigger/obu/register
-            select_obu = rsu_db.select_near_obu(rsu)
+            select_obu = rsu_db.select_near_obu(rsu, 1)
             if(len(select_obu) > 0) : # obu가 이미 등록되어있음
                 path_db = select_obu[0][1]
                 path = path_db.split(',')
@@ -144,6 +144,8 @@ def customOnMessage(message):
             now_idx = path.index(str(rsu))
             if(now_idx == len(path) - 2) :
                 start = end = path[now_idx + 1]
+            elif(now_idx == len(path) - 1) :
+                start = end = path[now_idx]
             else :
                 start, end = path[now_idx + 1], path[now_idx + 2]
 
@@ -165,7 +167,8 @@ def customOnMessage(message):
             publish_msg.append(messageJson)
 
             # 5. delete obu info
-            result = rsu_db.delete_obu(rsu, payload['obu_id'])
+            result = rsu_db.delete_obu(rsu, 1)
+            print('delete obu result : ', result)
 
 
     elif(len(topic_split) == 3) : # 주변 RSU로 부터 전달받는 경우
@@ -206,8 +209,10 @@ def customOnMessage(message):
             # 3. send obu info to next rsu - mqtt publish (obu/register)
             path_list = path.split(',')
             now_idx = path_list.index(str(rsu))
-            if(now_idx == len(path) - 2) :
+            if(now_idx == len(path_list) - 2) :
                 start = end = path_list[now_idx + 1]
+            elif(now_idx == len(path_list) - 1) :
+                start = end = path_list[now_idx]
             else :
                 start, end = path_list[now_idx + 1], path_list[now_idx + 2]
 
@@ -229,15 +234,21 @@ def customOnMessage(message):
             # publish_msg.append(messageJson)
 
             # 5. delete obu info
-            result = rsu_db.delete_obu(rsu, payload['obu_id'])
+            result = rsu_db.delete_obu(rsu, 1)
+            print('delete obu result : ', result)
 
     else : # test
-        result = rsu_db.db_test(rsu)
-        if(result) :
-            print('result : ', result)
-            print('Test ok')
-        else :
-            print('Test failed')
+        # result = rsu_db.db_test(rsu)
+        # if(result) :
+        #     print('result : ', result)
+        #     print('Test ok')
+        # else :
+        #     print('Test failed')
+        start = int(rsu) 
+        destination = int(payload['destination'])
+        path = astar.find_path(nodes[start - 1], nodes[destination - 1])
+        print(f'{start} -> {destination} : {path}')
+
 
 if mode not in AllowedActions:
     # parser.error("Unknown --mode option %s. Must be one of %s" % (mode, str(AllowedActions)))

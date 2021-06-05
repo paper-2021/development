@@ -37,12 +37,12 @@ def register_obu(rsu, obu_id, obu_path) :
 def check_anomaly(rsu, obu_path) :
     try :
         path = './' + rsu + '/' + db_file
-        conn = sqlite3.connect(db_file)
+        conn = sqlite3.connect(path)
         cur = conn.cursor()
         print('obu path : ', obu_path)
         obu_path = obu_path.split(',')
-        result = cur.execute("SELECT rsu_id FROM RSUState WHERE rsu_id in (%s);" %(obu_path)).fetchall()
-        if(len(result) > 0) :
+        result = cur.execute("SELECT start_rsu, end_rsu FROM RSUState WHERE start_rsu in (%s) and end_rsu in (%s);" %(obu_path, obu_path)).fetchall()
+        if(obu_path.index(int(result[0]['start_rsu'])) < obu_path.index(int(result[0]['end_rsu']))) :
             cur.close()
             conn.close()
             return True
@@ -69,12 +69,12 @@ def select_near_rsu(rsu) :
     finally :
         conn.close()
 
-def select_near_obu(rsu) :
+def select_near_obu(rsu, obu_id) :
     try :
         path = './' + rsu + '/' + db_file
         conn = sqlite3.connect(path)
         cur = conn.cursor()
-        result = cur.execute("SELECT obu_id, path FROM OBU;").fetchall()
+        result = cur.execute("SELECT obu_id, path FROM OBU WHERE obu_id = 1;").fetchall()
         near = [(x[0], x[1]) for x in result]
         conn.close()
         return near
@@ -89,6 +89,7 @@ def delete_obu(rsu, obu) :
         path = './' + rsu + '/' + db_file
         conn = sqlite3.connect(path)
         cur = conn.cursor()
+        obu = int(obu)
         result = cur.execute("DELETE FROM OBU WHERE obu_id = (%d);" %(obu))
         conn.close()
         return True
