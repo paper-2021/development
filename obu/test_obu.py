@@ -2,6 +2,7 @@
 # worken cv -> source ~/.profile
 # python 3 ---
 # 37.508379, 127.037166
+
 import os
 import sys
 import time
@@ -43,7 +44,7 @@ certificatePath = '8dc995a116.cert.pem' #args.certificatePath
 privateKeyPath = '8dc995a116.private.key' #args.privateKeyPath
 clientId = 'OBU' #args.thingName
 thingName = 'OBU' #args.thingName
-topic = 'hello/world/pubsub' #args.topic
+topic = 'obu/#' #args.topic
 args.mode = 'publish'
 args.message = 'Start'
 obu_id = 1
@@ -112,13 +113,13 @@ def customOnMessage(message):
         with open('display/html/index.html', 'w') as file:
             file.write(html_file)
         # 2-3 제작한 화면 png로 바꾸기
-        htmltopng.change_htmltopng('index.html') 
+        #htmltopng.change_htmltopng('index.html') 
         # 2-4 화면 띄우기
-        import cv2
-        image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
-        cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
-        cv2.waitKey(0) # time 마다 키 입력사애를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
-        cv2.destroyAllWindows() # 모든 윈도우창을 닫는다.
+        #import cv2
+        #image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
+        #cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
+        #cv2.waitKey(0) # time 마다 키 입력사애를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
+        #cv2.destroyAllWindows() # 모든 윈도우창을 닫는다.
     elif(subscribe_topic == 'obu/anomaly'):
         print('=============obu/anomaly=============' %(obu_id))
         # 2. show alarm
@@ -140,12 +141,12 @@ def customOnMessage(message):
         with open('index.html', 'w') as file:
             file.write(html_file)
         # 2-3 제작한 화면 png로 바꾸기
-        htmltopng.change_htmltopng('index.htmll')
+        #htmltopng.change_htmltopng('index.htmll')
         # 2-4 화면 띄우기
-        image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
-        cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
-        cv2.waitKey(0) # time 마다 키 입력사애를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
-        cv2.destroyAllWindows() # 모든 윈도우창을 닫는다.
+        #image = cv2.imread('display/image/map.png', cv2.IMREAD_COLOR)
+        #cv2.imshow("map", image) # 윈도우 창에 이미지를 띄운다.
+        #cv2.waitKey(0) # time 마다 키 입력사애를 받아온다. 0일 경우 키 입력이 될 때 까지 기다린다.
+        #cv2.destroyAllWindows() # 모든 윈도우창을 닫는다.
 
 
 if args.mode not in AllowedActions:
@@ -262,6 +263,7 @@ time.sleep(2)
 loopCount = 0
 while True:
     print("=========== OBU Start ===========")
+    myAWSIoTMQTTClient.subscribe(topic, 0, None)
     myAWSIoTMQTTClient.publish('trigger/start', 'Start', 0)
     try:
         print("Route: %s -> %s" %(rsu_id, next_rsu_id))
