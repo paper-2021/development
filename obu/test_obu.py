@@ -66,7 +66,7 @@ def find_obu():
     if rsu_id == '':
         return obu_loc
     if(time.time() - start_time >= time_obu):
-        time_obu = db_obu.select_dis(rsu_id, next_rsu_id)
+        time_obu = db_obu.select_dis(rsu_id, next_rsu_id) *10
         start_time = time.time()
         rsu_loc = db_obu.select_rsu_loc(rsu_id)
         return rsu_loc[0]+' ,'+rsu_loc[1]
@@ -80,8 +80,8 @@ def customOnMessage(message):
     payload = json.loads(message.payload)
     print("=======IN============================"+str(message.payload))
     situation = False # anomaly, True
-    if(subscribe_topic == '/obu/start'):
-        print('=============obu/start============='%(obu_id))
+    if(subscribe_topic == 'obu/start'):
+        print('=============obu/start=============')
         # 1. regiter rsu
         message = {}
         rsu_id = ''
@@ -100,6 +100,7 @@ def customOnMessage(message):
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         next_rsu_id = payload['start'] #(9)ex: '37.518, 127.050'
         end_next_rsu_id = payload['end'] 
+        print("=======Changed===========> rsu_id: %s, =========== next_rsu_id: %s ========="%(rsu_id ,next_rsu_id))
         obu_loc = find_obu() #ex: '37.518, 127.050', # 현재 OBU 위치 받기
         rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
         next_rsu_loc = db_obu.select_rsu_loc(next_rsu_id)
@@ -126,6 +127,10 @@ def customOnMessage(message):
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         next_rsu_id = payload['start'] #(9)ex: '37.518, 127.050'
         end_next_rsu_id = payload['end'] 
+        if(next_rsu_id == end_next_rsu_id):
+            print("============= Arrive =============")
+        print("=======Changed===========> rsu_id: %s, =========== next_rsu_id: %s ========="%(rsu_id ,next_rsu_id))
+        time_obu = db_obu.select_dis(rsu_id, next_rsu_id)
         obu_loc = find_obu() #ex: '37.518, 127.050', # 현재 OBU 위치 받기
         rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
         next_rsu_loc = db_obu.select_rsu_loc(next_rsu_id)
@@ -262,17 +267,17 @@ time.sleep(2)
 
 loopCount = 0
 while True:
-    print("=========== OBU Start ===========")
-    myAWSIoTMQTTClient.subscribe(topic, 0, None)
+    print("======================")
     myAWSIoTMQTTClient.publish('trigger/start', 'Start', 0)
     try:
         print("Route: %s -> %s" %(rsu_id, next_rsu_id))
         # find next rsu
         if(time_obu != 0 and time.time() - start_time >= time_obu):
-            print("======= Start content next RSU %d" %(next_rsu_id))
+            print("======= Start content next RSU %s" %(next_rsu_id))
             # make message
             message = {}
             rsu_id = next_rsu_id
+            start_time = time.time()
             message['obu_id'] = obu_id
             # send mqtt
             messageJson = json.dumps(message)

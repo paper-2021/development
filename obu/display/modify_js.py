@@ -21,7 +21,7 @@ def modify_html(situation, data):
 function initTmap(){
     var map = new Tmapv2.Map("map_div",  
     {
-        center: new Tmapv2.LatLng(37.496, 127.024), 
+        center: new Tmapv2.LatLng(37.498, 127.031), 
         width: "1500px", 
         height: "700px",
         zoom: 13
@@ -117,7 +117,7 @@ var map, marker;
 function initTmap(){
     var map = new Tmapv2.Map("map_div",  
     {
-        center: new Tmapv2.LatLng(37.496, 127.024), 
+        center: new Tmapv2.LatLng(37.498, 127.031), 
         width: "1500px", 
         height: "700px",
         zoom: 13
