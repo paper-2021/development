@@ -34,9 +34,9 @@ def modify_html(situation, data):
     if(situation == True):
       anomaly_route += """
        var polyline = new Tmapv2.Polyline({
-        path: [ new Tmapv2.LatLng("""+data[3]+ """),
-              new Tmapv2.LatLng(""" + data[4] + """),  ],
-        strokeColor: "FF0000",
+        path: [ new Tmapv2.LatLng("""+data[4]+ """),
+              new Tmapv2.LatLng(""" + data[5] + """),  ],
+        strokeColor: "#FF0000",
 		strokeWeight: 6,
 		draggable: true, 
 		strokeStyle:'dot', 
@@ -84,7 +84,9 @@ function initTmap(){
 		outline: true,
 		outlineColor:'#ffffff',
 		map: map 
-    });""" + anomaly_route+"""
+    });
+    """ + anomaly_route+"""
+
     var polyline = new Tmapv2.Polyline({
         path: [ """ + route + """        ],
         strokeColor: "#FF1E9D",
