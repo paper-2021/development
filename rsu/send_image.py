@@ -2,7 +2,7 @@ import json
 import sys
 
 imagePath = '/src/GG/3_accident.jpg' 
-url = 'http://3.35.184.173:8000/image'
+url = 'http://13.125.11.117:8000/image'
 
 def sendImage(image_path):
     try:
