@@ -132,12 +132,13 @@ def customOnMessage(message):
         print('=============obu/anomaly=============')
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
+        url = "0"
         rsu_list = [str(rsu_id), str(next_rsu_id), str(end_next_rsu_id)]
         url = payload['url']
         start = str(payload['start'])
         end = str(payload['end'])
         #print("=============rsu_list: %s ====== anomaly list: %s, %s" %(str(rsu_list), start, end))
-        if(url != '0' and start in rsu_list or end in rsu_list):
+        if(url != "0" and start in rsu_list or end in rsu_list):
             print('In obu/anomaly=============')
             link_loc = db_obu.find_link(payload['start'],payload['end'])
             link_loc = str(link_loc[0])+', ' + str(link_loc[1])
