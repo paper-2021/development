@@ -60,7 +60,7 @@ def find_obu():
     if rsu_id == '':
         return obu_loc
     if(time.time() - start_time >= time_obu):
-        time_obu = db_obu.select_dis(rsu_id, next_rsu_id) *12
+        time_obu = db_obu.select_dis(rsu_id, next_rsu_id)*12
         start_time = time.time()
         return rsu_loc
 
@@ -74,7 +74,7 @@ def customOnMessage(message):
     global check
     subscribe_topic = message.topic
     payload = json.loads(message.payload)
-    print("=============IN============="+str(message.payload))
+    print("=============IN============="+str(message.payload) + str(message.topic))
     situation = False # anomaly, True
     if(subscribe_topic == 'obu/start'):
         print('=============obu/start=============')
@@ -91,7 +91,8 @@ def customOnMessage(message):
         # 1-2 send mqtt
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
-        print("=============Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register=============')
+        print("=============Send message:"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register=============')
+        
     elif(subscribe_topic == 'obu/register'):
         print('=============obu/register=============')
         check = True

@@ -29,9 +29,10 @@ def modify_html(situation, data): #FIX 출발지, 도착지 추가
       next_route = """new Tmapv2.LatLng("""+data[2]+ """),
               new Tmapv2.LatLng(""" + data[3] + """),
               """
-    print("======= Anolnay start ===== "+ str(situation)) # TEST
+    print("======= Anolnay start ===== "+ str(situation))
     if(situation == True):
-        js_file = """var map, marker;
+      print("======= Anolnay in===== "+ str(situation))
+      js_file = """var map, marker;
 
 function initTmap(){
     var map = new Tmapv2.Map("map_div",  
