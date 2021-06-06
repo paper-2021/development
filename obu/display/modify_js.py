@@ -1,38 +1,82 @@
 route = ""
+departure = ''
+arrival = ''
+next_route = ''
+anomaly_route = ''
 
 def init_map():
     route = ""
+
+def set_loc(de, a):
+  global departure
+  global arrival
+  departure = de
+  arrival = a[0]+', '+a[1]
+
 
 def modify_html(situation, data):
     """ # NOTE
     data
     situation : false -> [obu_loc, start_loc, end_loc, end_next_loc]
-    situation : true  -> [obu_loc, start_loc, end_loc, , end_next_loc, imagename]
+    situation : true  -> [obu_loc, link_loc, 0, imagename, anomaly_start, anomaly_end]
     """
     js_file = ''
     global route
-    route += """new Tmapv2.LatLng("""+data[1]+ """),
-            new Tmapv2.LatLng(""" + data[2] + """),
-            """
-    next_route = """new Tmapv2.LatLng(""" + data[3] + """),"""
-    if(situation):
-        js_file = """var map, marker;
+    global next_route
+    global anomaly_route
+    if(data[2] !='0'):
+      route += """new Tmapv2.LatLng("""+data[1]+ """),
+              new Tmapv2.LatLng(""" + data[2] + """),
+              """
+      next_route = """new Tmapv2.LatLng("""+data[2]+ """),
+              new Tmapv2.LatLng(""" + data[3] + """),
+              """
+    if(situation == True):
+      anomaly_route += """
+       var polyline = new Tmapv2.Polyline({
+        path: [ new Tmapv2.LatLng("""+data[4]+ """),
+              new Tmapv2.LatLng(""" + data[5] + """),  ],
+        strokeColor: "#FF0000",
+		strokeWeight: 6,
+		draggable: true,  
+		outline: true,
+		outlineColor:'#ffffff',
+		map: map 
+    });
+      """
+      js_file = """var map, marker;
 
 function initTmap(){
     var map = new Tmapv2.Map("map_div",  
     {
-        center: new Tmapv2.LatLng(37.496, 127.024), 
-        width: "1500px", 
-        height: "700px",
+        center: new Tmapv2.LatLng(37.495, 127.021), 
+        width: "800px", 
+        height: "500px",
         zoom: 13
     });
     var rsu = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng(""" + data[2]+ """),
+        position: new Tmapv2.LatLng(""" + data[1]+ """),
+        icon: "images/page_1/RSU.png", 
+        map: map
+    });
+    var car = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng("""+data[0]+"""),
+        icon: "images/page_1/car.png", 
+        map: map 
+    });
+    var A = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng(""" + arrival+ """),
+        icon: "images/page_1/A.png", 
+        map: map
+    });
+    var D = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng(""" + departure+ """),
+        icon: "images/page_1/D.png", 
         map: map
     });
     var polyline = new Tmapv2.Polyline({
-        path: [ """ + route + """        ],
-        strokeColor: "#dd00dd",
+        path: [ """ + next_route + """  ],
+        strokeColor: "#0000FF",
 		strokeWeight: 6,
 		draggable: true, 
 		strokeStyle:'dot', 
@@ -41,15 +85,21 @@ function initTmap(){
 		map: map 
     });
 
-    var car = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng("""+data[0]+"""),
-        icon: "display/images/page_1/car.png", 
-        map: map 
+    var polyline = new Tmapv2.Polyline({
+        path: [ """ + route + """        ],
+        strokeColor: "#FF1E9D",
+		strokeWeight: 6,
+		draggable: true, 
+		strokeStyle:'dot', 
+		outline: true,
+		outlineColor:'#ffffff',
+		map: map 
     });
-    document.getElementById("u4_png").src = " """+ data[4]+ """ ";
+    """ + anomaly_route+"""
+    document.getElementById("u4_png").src = " """+ data[3]+ """ ";
 } 
         """
-        html_file = """<!DOCTYPE html>
+      html_file = """<!DOCTYPE html>
 <html>
   <head>
     <title>simpleMap</title>
@@ -109,23 +159,22 @@ function initTmap(){
   </body>
 </html>
 
-
 """
+      return html_file
     else:
         js_file = """
 var map, marker;
 function initTmap(){
     var map = new Tmapv2.Map("map_div",  
     {
-        center: new Tmapv2.LatLng(37.496, 127.024), 
-        width: "1500px", 
-        height: "700px",
+        center: new Tmapv2.LatLng(37.495, 127.021), 
+        width: "800px", 
+        height: "500px",
         zoom: 13
     });
-    
     var polyline = new Tmapv2.Polyline({
-        path: ["""+ route + """],
-        strokeColor: "#dd00dd",
+        path: [ """ + next_route + """ ],
+        strokeColor: "#0000FF",
 		strokeWeight: 6,
 		draggable: true, 
 		strokeStyle:'dot', 
@@ -134,10 +183,32 @@ function initTmap(){
 		map: map 
     });
 
+    var polyline = new Tmapv2.Polyline({
+        path: [ """ + route + """        ],
+        strokeColor: "#FF1E9D",
+		strokeWeight: 6,
+		draggable: true, 
+		strokeStyle:'dot', 
+		outline: true,
+		outlineColor:'#ffffff',
+		map: map 
+    });
+    """ + anomaly_route+"""
+    
     var car = new Tmapv2.Marker({
-        position: new Tmapv2.LatLng(" """+data[0]+""" "),
-        icon: "display/images/page_1/car.png", 
+        position: new Tmapv2.LatLng("""+data[0]+""" ),
+        icon: "images/page_1/car.png", 
         map: map 
+    });
+    var A = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng(""" + arrival+ """),
+        icon: "images/page_1/A.png", 
+        map: map
+    });
+    var D = new Tmapv2.Marker({
+        position: new Tmapv2.LatLng(""" + departure+ """),
+        icon: "images/page_1/D.png", 
+        map: map
     });
 }
 """
