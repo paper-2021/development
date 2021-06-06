@@ -43,16 +43,20 @@ thingName = 'RSU' + str(args.thingName)
 topic = 'hello/world/pubsub'
 mode = 'publish'
 
+real_thing = args.thingName
+
 publish_topic = []
 publish_msg = []
 
-cloud_upload_url = 'http://3.35.184.173:8000/upload/'
+cloud_upload_url = 'http://13.125.11.117:8000/upload/'
 
 # 알고리즘 도로 정보 초기화
 from pathfinding import call_astar as astar
 global nodes
 nodes = astar.call_astar()
-# from pathfinding import call_dijkstra
+from pathfinding import call_dijkstra as dij
+global d_nodes
+d_nodes = dij.call_dijkstra()
 
 import rsu_db 
 
@@ -60,13 +64,13 @@ import rsu_db
 def customOnMessage(message):
     global publish_topic
     global publish_msg
-    print('Received message on topic %s: %s\n' % (message.topic, message.payload))
     subscribe_topic = message.topic
     payload = json.loads(message.payload)
 
     topic_split = subscribe_topic.split('/')
     rsu = topic_split[0]
     print('RSU #', rsu)
+    print('Received message on topic %s: %s\n'% (message.topic, message.payload))
 
     if(len(topic_split) == 4) : # trigger - 자신한테 일어나는 경우
         if(topic_split[2] == 'rsu') : # /trigger/rsu/anomaly
@@ -75,6 +79,7 @@ def customOnMessage(message):
             accident_type = payload['accident_type']
             accident_size = payload['accident_size']
             image_name = payload['image_name']
+            send_true = payload['send']
             basic_image_path = './blurring/' + str(accident_type) + '/'
             print(f'start_rsu : {start_rsu}, end_rsu : {end_rsu}, accident_type : {accident_type}, accident_size : {accident_size}, image_name : {image_name}')
 
@@ -83,17 +88,18 @@ def customOnMessage(message):
             # locations = detect.detect_ip('./' + str(accident_type) + '/' + image_name)
             # locations = locations[1:]
             # print('locations : ', locations)
+            if(send_true == '1') :
+                locations = [[(118.0, 258.0, 201.0, 290.0)], [(118.0, 258.0, 201.0, 290.0)], [(118.0, 258.0, 201.0, 290.0)]]
+                loc = int(payload['loc'])
+                
+                # 2. detect face and blurring
+                from blurring import blurring
+                blurred_image_name = blurring.blurring('/home/pi/rsu' + str(real_thing) + '/blurring/' + str(accident_type) + '/' + image_name, locations[loc])
 
-            locations = [(118.0, 258.0, 201.0, 290.0)]
-
-            # 2. detect face and blurring
-            from blurring import blurring
-            blurred_image_name = blurring.blurring('/home/pi/rsu' + str(rsu) + '/blurring/' + str(accident_type) + '/' + image_name, locations)
-
-            # 3. send image to cloud
-            from send_image import sendImage
-            cloud_image_name = sendImage('/home/pi/rsu' + str(rsu) + '/blurring/' + str(accident_type) + '/' + blurred_image_name) # parameter : image name
-            print('cloud_image_name : ', cloud_image_name)
+                # 3. send image to cloud
+                from send_image import sendImage
+                cloud_image_name = sendImage('/home/pi/rsu' + str(real_thing) + '/blurring/' + str(accident_type) + '/' + blurred_image_name) # parameter : image name
+                print('cloud_image_name : ', cloud_image_name)
 
             # 4. insert into RSUState
             result = rsu_db.insert_anomaly(str(rsu), start_rsu, end_rsu, accident_type, accident_size)
@@ -101,7 +107,8 @@ def customOnMessage(message):
 
             # 5. change links weight
             traffic = 10
-            astar.change_branch(nodes[start_rsu - 1], nodes[end_rsu - 1], traffic)
+            # astar.change_branch(nodes[start_rsu - 1], nodes[end_rsu - 1], traffic)
+            dij.change_branch(d_nodes[start_rsu - 1], d_nodes[end_rsu - 1], traffic)
 
             # 6. send anomaly info to near rsu - mqtt publish(n/rsu/anomaly)
             near_rsu = rsu_db.select_near_rsu(rsu) # select near rsu
@@ -115,17 +122,23 @@ def customOnMessage(message):
                 messageJson = json.dumps(message)
                 publish_msg.append(messageJson)
             
+            if(send_true == '1') :
+                url = cloud_upload_url + cloud_image_name
+            else :
+                url = '0'
             # 7. send anomaly image url to registered obu - mqtt publish(obu/anomaly)
             select_obu = rsu_db.select_near_obu(rsu)
             tmp = 'obu/anomaly'
             publish_topic.append(tmp)
             message = {}
-            message['url'] = cloud_upload_url + cloud_image_name
+            message['start'] = start_rsu
+            message['end'] = end_rsu
+            message['url'] = url
             messageJson = json.dumps(message)
             publish_msg.append(messageJson)
 
         elif(topic_split[2] == 'obu') : # /trigger/obu/register
-            select_obu = rsu_db.select_near_obu(rsu, 1)
+            select_obu = rsu_db.select_near_obu(rsu)
             if(len(select_obu) > 0) : # obu가 이미 등록되어있음
                 path_db = select_obu[0][1]
                 path = path_db.split(',')
@@ -133,7 +146,8 @@ def customOnMessage(message):
                 # 1. calculate path
                 start = int(rsu) 
                 destination = int(payload['destination'])
-                path = astar.find_path(nodes[start - 1], nodes[destination - 1])
+                # path = astar.find_path(nodes[start - 1], nodes[destination - 1])
+                path = dij.find_path(d_nodes[start - 1], str(start), str(destination))
                 print(f'{start} -> {destination} : {path}')
                 path = list(map(str, path))
                 path_db = ','.join(path)
@@ -183,7 +197,24 @@ def customOnMessage(message):
             print('insert_anomaly result : ', result)
             # 2. change links weight
             traffic = 10
-            astar.change_branch(nodes[start_rsu - 1], nodes[end_rsu - 1], traffic)
+            # astar.change_branch(nodes[start_rsu - 1], nodes[end_rsu - 1], traffic)
+            dij.change_branch(d_nodes[start_rsu - 1], d_nodes[end_rsu - 1], traffic)
+
+            select_obu = rsu_db.select_near_obu(rsu)
+            for i in select_obu :
+                obu_id = i[0]
+                obu_path = i[1]
+                obu_path = obu_path.split(',')
+                result = rsu_db.check_anomaly(rsu, obu_path)
+                if(result) : # path에 이상현상이 있으면 재탐색
+                    print('!!!Anonmaly!!!')
+                    now_idx = obu_path.index(rsu)
+                    next_rsu = obu_path[now_idx + 1]
+                    re_path_result = dij.find_path(d_nodes[int(next_rsu) - 1], str(next_rsu), str(obu_path[-1]))
+                    print('re calculate path : ', re_path_result)
+                    update_result = rsu_db.update_obu_path(rsu, obu_id, re_path_result)
+                    print(update_result)
+                
         
         elif(topic_split[1] == 'rsu' and topic_split[2] == 'traffic') : # /rsu/traffic
             start_rsu = payload['start_rsu']
@@ -192,44 +223,42 @@ def customOnMessage(message):
 
             # change links weight
             traffic = 10
-            astar.change_branch(nodes[start_rsu - 1], nodes[end_rsu - 1], int(traffic))
+            # astar.change_branch(nodes[start_rsu - 1], nodes[end_rsu - 1], int(traffic))
+            dij.change_branch(d_nodes[start_rsu - 1], d_nodes[end_rsu], traffic)
 
         elif(topic_split[1] == 'obu') : # /obu/register
             path = payload['path']
             print('path : ', path)
             # 1. check anormaly table - if anormaly in path, recalculate path
+            path = path.split(',')
             result = rsu_db.check_anomaly(rsu, path)
             print('check_anomaly result : ', result)
             if(result) : # path에 이상현상이 있으면 재탐색
-                path_result = astar.find_path(nodes[rsu - 1], nodes[path[-1] - 1]) # path를 어떻게 넘겨주는지 확인필요
-                print(path_result)
+                print('!!!Anonmaly!!!')
+                # path_result = astar.find_path(nodes[rsu - 1], nodes[path[-1] - 1]) # path를 어떻게 넘겨주는지 확인필요
+                now_idx = path.index(rsu)
+                next_rsu = path[now_idx + 1]
+                path_result = dij.find_path(d_nodes[int(next_rsu) - 1], str(next_rsu), str(path[-1]))
+                print('re calculate path : ', path_result)
             # 2. insert into OBU
-            result = rsu_db.register_obu(rsu, payload['obu_id'], path)
+            result = rsu_db.register_obu(rsu, payload['obu_id'], ','.join(path))
             print('register_obu result : ', result)
             # 3. send obu info to next rsu - mqtt publish (obu/register)
-            path_list = path.split(',')
-            now_idx = path_list.index(str(rsu))
-            if(now_idx == len(path_list) - 2) :
-                start = end = path_list[now_idx + 1]
-            elif(now_idx == len(path_list) - 1) :
-                start = end = path_list[now_idx]
+            now_idx = path.index(str(rsu))
+            if(now_idx == len(path) - 2) :
+                start = end = path[now_idx + 1]
+            elif(now_idx == len(path) - 1) :
+                start = end = path[now_idx]
             else :
-                start, end = path_list[now_idx + 1], path_list[now_idx + 2]
+                start, end = path[now_idx + 1], path[now_idx + 2]
 
-            tmp = start + '/obu/register'
-            publish_topic.append(tmp)
-            message = {}
-            message['obu_id'] = payload['obu_id']
-            message['start'] = start
-            message['end'] = end
-            message['path'] = path
-            messageJson = json.dumps(message)
-            publish_msg.append(messageJson)
-
-            # publish_topic.append('obu/register')
+            # tmp = start + '/obu/register'
+            # publish_topic.append(tmp)
             # message = {}
-            # message['start'] = start 
+            # message['obu_id'] = payload['obu_id']
+            # message['start'] = start
             # message['end'] = end
+            # message['path'] = path
             # messageJson = json.dumps(message)
             # publish_msg.append(messageJson)
 
@@ -238,16 +267,30 @@ def customOnMessage(message):
             print('delete obu result : ', result)
 
     else : # test
-        # result = rsu_db.db_test(rsu)
-        # if(result) :
-        #     print('result : ', result)
-        #     print('Test ok')
-        # else :
-        #     print('Test failed')
-        start = int(rsu) 
-        destination = int(payload['destination'])
-        path = astar.find_path(nodes[start - 1], nodes[destination - 1])
+        start = int(payload['start']) 
+        end = int(payload['end'])
+        a_start = int(payload['a_start'])
+        a_end = int('a_end')
+        # path = astar.find_path(nodes[start - 1], nodes[destination - 1])
+        path = dij.find_path(d_nodes[start - 1], str(start), str(end))
         print(f'{start} -> {destination} : {path}')
+        path = ','.join(path)
+        print('path : ', path)
+
+        result = rsu_db.insert_anomaly(str(rsu), a_start, a_end, 3, 10)
+        print('insert_anomaly result : ', result)
+
+        result = rsu_db.check_anomaly(rsu, path)
+        print('check anomaly result : ', result)
+
+        if(result) :
+            path_split = path.split(',')
+            # path_result = astar.find_path(nodes[rsu - 1], nodes[path[-1] - 1]) # path를 어떻게 넘겨주는지 확인필요
+            path_result = dij.find_path(d_nodes[rsu - 1], str(rsu), str(path_split[-1]))
+            print(path_result)
+
+
+
 
 
 if mode not in AllowedActions:
@@ -276,12 +319,12 @@ if not os.path.isfile(privateKeyPath):
     exit(3)
 
 # Configure logging
-logger = logging.getLogger("AWSIoTPythonSDK.core")
-logger.setLevel(logging.DEBUG)
-streamHandler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-streamHandler.setFormatter(formatter)
-logger.addHandler(streamHandler)
+# logger = logging.getLogger("AWSIoTPythonSDK.core")
+# logger.setLevel(logging.DEBUG)
+# streamHandler = logging.StreamHandler()
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# streamHandler.setFormatter(formatter)
+# logger.addHandler(streamHandler)
 
 # Progressive back off core
 backOffCore = ProgressiveBackOffCore()
@@ -372,7 +415,7 @@ while True:
         if mode == 'both' or mode == 'publish':
             n = len(publish_topic)
             for i in range(n) :
-                time.sleep(3)
+                time.sleep(2)
                 myAWSIoTMQTTClient.publish(publish_topic[i], publish_msg[i], 0)
                 print('Published topic %s: %s\n' % (publish_topic[i], publish_msg[i]))
             # if args.mode == 'publish':
