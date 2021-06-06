@@ -89,7 +89,7 @@ def customOnMessage(message):
             # locations = locations[1:]
             # print('locations : ', locations)
             if(send_true == '1') :
-                locations = [[(118.0, 258.0, 201.0, 290.0)], [(118.0, 258.0, 201.0, 290.0)], [(118.0, 258.0, 201.0, 290.0)]]
+                locations = [[(686, 416, 802, 468)], [(967, 673, 1073, 705)], [(118.0, 258.0, 201.0, 290.0)]]
                 loc = int(payload['loc'])
                 
                 # 2. detect face and blurring
@@ -100,6 +100,8 @@ def customOnMessage(message):
                 from send_image import sendImage
                 cloud_image_name = sendImage('/home/pi/rsu' + str(real_thing) + '/blurring/' + str(accident_type) + '/' + blurred_image_name) # parameter : image name
                 print('cloud_image_name : ', cloud_image_name)
+                if(cloud_image_name == False) :
+                    cloud_image_name = str(accident_type) + '/' + blurred_image_name
 
             # 4. insert into RSUState
             result = rsu_db.insert_anomaly(str(rsu), start_rsu, end_rsu, accident_type, accident_size)

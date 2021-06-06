@@ -21,7 +21,8 @@ const storage = multer.diskStorage({
     },
     filename: async function(req, file, cb) {
         console.log('file name : ', file.originalname)
-        let fileName = await datetimeTight() + '_' + file.originalname
+        // let fileName = await datetimeTight() + '_' + file.originalname
+        let fileName = file.originalname
         cb(null, fileName) // 저장되는 file명
         req.fileName = fileName
     }
