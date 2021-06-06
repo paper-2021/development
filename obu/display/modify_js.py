@@ -13,7 +13,7 @@ def set_loc(de, a):
   arrival = a[0]+', '+a[1]
 
 
-def modify_html(situation, data): #FIX 출발지, 도착지 추가
+def modify_html(situation, data):
     """ # NOTE
     data
     situation : false -> [obu_loc, start_loc, end_loc, end_next_loc]
@@ -87,7 +87,7 @@ function initTmap(){
     document.getElementById("u4_png").src = " """+ data[3]+ """ ";
 } 
         """
-        html_file = """<!DOCTYPE html>
+      html_file = """<!DOCTYPE html>
 <html>
   <head>
     <title>simpleMap</title>
