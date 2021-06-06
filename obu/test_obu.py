@@ -133,16 +133,19 @@ def customOnMessage(message):
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         rsu_list = [rsu_id, next_rsu_id, end_next_rsu_id]
         url = payload['url']
-        print("=============rsu_list: %s" %(str(rsu_list)))
-        if(url != '0' and payload['start'] in rsu_list or payload['end'] in rsu_list):
+        start = str(payload['start'])
+        end = str(payload['end'])
+        print("=============rsu_list: %s ====== anomaly list: %s, %s" %(str(rsu_list), start, end))
+        if(url != '0' and start in rsu_list or end in rsu_list):
             print('=============In obu/anomaly=============')
             link_loc = db_obu.find_link(payload['start'],payload['end'])
             link_loc = str(link_loc[0])+', ' + str(link_loc[1])
             data_next = [str(obu_loc), str(link_loc), str(0)] 
             data_next.append(payload['url'])
+            data_next += [start, end]
             # 2-2 modify js
             html_file = modify_js.modify_html(True, data_next)
-            with open('index.html', 'w') as file:
+            with open('display/html/index.html', 'w') as file:
                 file.write(html_file)
         # 2-3 제작한 화면 png로 바꾸기
         #htmltopng.change_htmltopng('index.htmll')
@@ -292,4 +295,4 @@ while True:
     except Exception as e:
         print(e)
         print('OBU Error')
-    time.sleep(3)
+    time.sleep(4)
