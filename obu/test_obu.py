@@ -132,8 +132,9 @@ def customOnMessage(message):
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
         rsu_list = [rsu_id, next_rsu_id, end_next_rsu_id]
-        #print("=============rsu_list: %s" %(str(rsu_list)))
-        if(payload['start'] in rsu_list or payload['end'] in rsu_list):
+        url = payload['url']
+        print("=============rsu_list: %s" %(str(rsu_list)))
+        if(url != '0' and payload['start'] in rsu_list or payload['end'] in rsu_list):
             print('=============In obu/anomaly=============')
             link_loc = db_obu.find_link(payload['start'],payload['end'])
             link_loc = str(link_loc[0])+', ' + str(link_loc[1])
