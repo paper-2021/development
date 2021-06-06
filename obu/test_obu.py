@@ -60,7 +60,7 @@ def find_obu():
     if rsu_id == '':
         return obu_loc
     if(time.time() - start_time >= time_obu):
-        time_obu = db_obu.select_dis(rsu_id, next_rsu_id)*12
+        time_obu = db_obu.select_dis(rsu_id, next_rsu_id)*15
         start_time = time.time()
         return rsu_loc
 
@@ -72,6 +72,7 @@ def customOnMessage(message):
     global destination
     global rsu_loc
     global check
+    global time_obu
     subscribe_topic = message.topic
     payload = json.loads(message.payload)
     print("=============IN============="+str(message.payload) + str(message.topic))
@@ -91,7 +92,7 @@ def customOnMessage(message):
         # 1-2 send mqtt
         messageJson = json.dumps(message)
         myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
-        print("=============Send message:"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register=============')
+        print("Send message:"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register=============')
         
     elif(subscribe_topic == 'obu/register'):
         print('=============obu/register=============')
@@ -131,18 +132,22 @@ def customOnMessage(message):
         print('=============obu/anomaly=============')
         # 2. show alarm
         # 2.-1 현재 rsu와 다음 rsu 위치 구하기
-        rsu_list = [rsu_id, next_rsu_id, end_next_rsu_id]
+        rsu_list = [str(rsu_id), str(next_rsu_id), str(end_next_rsu_id)]
         url = payload['url']
         start = str(payload['start'])
         end = str(payload['end'])
-        print("=============rsu_list: %s ====== anomaly list: %s, %s" %(str(rsu_list), start, end))
+        #print("=============rsu_list: %s ====== anomaly list: %s, %s" %(str(rsu_list), start, end))
         if(url != '0' and start in rsu_list or end in rsu_list):
-            print('=============In obu/anomaly=============')
+            print('In obu/anomaly=============')
             link_loc = db_obu.find_link(payload['start'],payload['end'])
             link_loc = str(link_loc[0])+', ' + str(link_loc[1])
+            start_loc = db_obu.select_rsu_loc(start)
+            end_loc = db_obu.select_rsu_loc(end)
+            start_loc = start_loc[0]+', ' + start_loc[1]
+            end_loc = end_loc[0]+', ' + end_loc[1]
             data_next = [str(obu_loc), str(link_loc), str(0)] 
             data_next.append(payload['url'])
-            data_next += [start, end]
+            data_next += [start_loc, end_loc]
             # 2-2 modify js
             html_file = modify_js.modify_html(True, data_next)
             with open('display/html/index.html', 'w') as file:
@@ -291,8 +296,8 @@ while True:
             if(check):
                 myAWSIoTMQTTClient.publish(str(rsu_id) + '/trigger/obu/register', messageJson, 0)
                 check = False
-                print("========================Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register========================')
+                print("Send message"+ str(message)+"  topic: "+ str(rsu_id) + '/trigger/obu/register========================')
     except Exception as e:
         print(e)
         print('OBU Error')
-    time.sleep(4)
+    time.sleep(3)

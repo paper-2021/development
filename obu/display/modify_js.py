@@ -38,8 +38,7 @@ def modify_html(situation, data):
               new Tmapv2.LatLng(""" + data[5] + """),  ],
         strokeColor: "#FF0000",
 		strokeWeight: 6,
-		draggable: true, 
-		strokeStyle:'dot', 
+		draggable: true,  
 		outline: true,
 		outlineColor:'#ffffff',
 		map: map 
@@ -85,7 +84,6 @@ function initTmap(){
 		outlineColor:'#ffffff',
 		map: map 
     });
-    """ + anomaly_route+"""
 
     var polyline = new Tmapv2.Polyline({
         path: [ """ + route + """        ],
@@ -97,6 +95,7 @@ function initTmap(){
 		outlineColor:'#ffffff',
 		map: map 
     });
+    """ + anomaly_route+"""
     document.getElementById("u4_png").src = " """+ data[3]+ """ ";
 } 
         """
@@ -182,7 +181,7 @@ function initTmap(){
 		outline: true,
 		outlineColor:'#ffffff',
 		map: map 
-    });""" + anomaly_route+"""
+    });
 
     var polyline = new Tmapv2.Polyline({
         path: [ """ + route + """        ],
@@ -194,6 +193,7 @@ function initTmap(){
 		outlineColor:'#ffffff',
 		map: map 
     });
+    """ + anomaly_route+"""
     
     var car = new Tmapv2.Marker({
         position: new Tmapv2.LatLng("""+data[0]+""" ),
