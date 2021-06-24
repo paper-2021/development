@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sqlite3
 from haversine import haversine
-db_name = 'obu.sqlite3'
+db_name = 'OBU_ver1.sqlite3'
 
 def select_start(obu_loc):
     try:

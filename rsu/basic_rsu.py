@@ -186,7 +186,6 @@ def customOnMessage(message):
             result = rsu_db.delete_obu(rsu, 1)
             print('delete obu result : ', result)
 
-
     elif(len(topic_split) == 3) : # 주변 RSU로 부터 전달받는 경우
         if(topic_split[1] == 'rsu' and topic_split[2] == 'anomaly') : # /rsu/anomaly
             start_rsu = payload['start_rsu']
