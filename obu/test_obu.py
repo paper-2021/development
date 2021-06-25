@@ -38,6 +38,7 @@ thingName = 'OBU' #args.thingName
 topic = 'obu/#' #args.topic
 args.mode = 'publish'
 args.message = 'Start'
+
 obu_id = 1
 destination = '78'
 obu_loc = '37.508, 127.037' # NOTE start obu 위치 여기 넣기

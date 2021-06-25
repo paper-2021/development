@@ -283,7 +283,6 @@ near = {
 }
 
 import sqlite3
-db_name = 'obu.sqlite3'
 
 def create_db() :
     try :
