@@ -15,7 +15,7 @@ import cv2
 import numpy as np
 import time
 
-import obu.obu-obu.dbver3 as db
+import obu.db_OBUver3 as db
 # original obu part
 from obu.display import htmltopng as htmltopng
 from obu.display import modify_js as modify_js
@@ -41,6 +41,15 @@ thingName = 'OBU' #args.thingName
 topic = 'obu/#' #args.topic
 args.mode = 'publish'
 args.message = 'Start'
+
+def customOnMessage(message):
+    global state
+    subscribe_topic = message.topic
+    payload = json.loads(message.payload)
+    print(f'Received mqtt: ========================= {message.payload} {message.topic}')
+    #이상현상 감시지
+    if(message.topic == 'obu/trigger/anomaly'):
+        state = ('anomaly', payload)
 
 if args.mode not in AllowedActions:
     parser.error("Unknown --mode option %s. Must be one of %s" % (args.mode, str(AllowedActions)))
@@ -144,14 +153,7 @@ if args.mode == 'both' or args.mode == 'subscribe':
     myAWSIoTMQTTClient.subscribe(topic, 0, None)
 time.sleep(2)
 
-def customOnMessage(message):
-    global state
-    subscribe_topic = message.topic
-    payload = json.loads(message.payload)
-    print(f'Received mqtt: ========================= {message.payload} {message.topic}')
-    #이상현상 감시지
-    if(message.topic == 'obu/trigger/anomaly'):
-        state = ('anomaly', payload)
+
 
 
 start = 0 # CHECK

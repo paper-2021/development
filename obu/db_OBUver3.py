@@ -1,12 +1,12 @@
 import sqlite3
-
+from haversine import haversine
 db_file = 'OBUver3.sqlite3'
 
 # original obu part
 def select_start(obu_loc):
     try:
         obu_loc = obu_loc.split(',')
-        con = sqlite3.connect(db_name)
+        con = sqlite3.connect(db_file)
         cur = con.cursor()
         cur.execute("SELECT start from RSU where start_latitude>=%s and start_longitude>=%s and  end_latitude<=%s and end_longitude<=%s" %(obu_loc[0], obu_loc[1], obu_loc[0], obu_loc[1]))
         return str(cur.fetchall()[0][0])
@@ -18,7 +18,7 @@ def select_start(obu_loc):
 
 def select_rsu_loc(rsu_id):
     try:
-        con = sqlite3.connect(db_name)
+        con = sqlite3.connect(db_file)
         cur = con.cursor()
         cur.execute("SELECT start_latitude, start_longitude from RSU where start=%s" %(rsu_id))
         return cur.fetchall()[0]
@@ -30,7 +30,7 @@ def select_rsu_loc(rsu_id):
 
 def select_dis(start, end):
     try:
-        con = sqlite3.connect(db_name)
+        con = sqlite3.connect(db_file)
         cur = con.cursor()
         cur.execute("SELECT start_latitude, start_longitude, end_latitude, end_longitude from RSU where start=%s and end= %s" %(start, end))
         data = cur.fetchall()
@@ -47,7 +47,7 @@ def select_dis(start, end):
 
 def find_link(start, end):
     try:
-        con = sqlite3.connect(db_name)
+        con = sqlite3.connect(db_file)
         cur = con.cursor()
         cur.execute("SELECT start_latitude, start_longitude, end_latitude, end_longitude from RSU where start=%s and end= %s" %(start, end))
         data = cur.fetchall()
