@@ -15,8 +15,8 @@ import cv2
 import numpy as np
 import time
 
+import obu.obu-obu.dbver3 as db
 # original obu part
-import obu.db_obu as db_obu
 from obu.display import htmltopng as htmltopng
 from obu.display import modify_js as modify_js
 
@@ -24,7 +24,7 @@ from obu.display import modify_js as modify_js
 from rsu.pathfinding import call_astar as astar
 global nodes
 nodes = astar.call_astar()
-import obu.obu-obu.db_OBUver3 as rsu_db
+
 
 # Greengrass Iot device part
 AllowedActions = ['both', 'publish', 'subscribe']
@@ -172,7 +172,7 @@ def find_obu():
     if rsu_id == '':
         return obu_loc
     if(time.time() - start_time >= time_obu):
-        time_obu = db_obu.select_dis(rsu_id, next_rsu_id)*15
+        time_obu = db.select_dis(rsu_id, next_rsu_id)*15
         start_time = time.time()
         return rsu_loc
 
@@ -195,7 +195,7 @@ def main():
             destination = 0
             rsu_id = start
             modify_js.init_map()
-            modify_js.set_loc(db_obu.select_rsu_loc(start), db_obu.select_rsu_loc(destination)) #set start, end
+            modify_js.set_loc(db.select_rsu_loc(start), db.select_rsu_loc(destination)) #set start, end
             state = 'find_route'
 
             #3. find route
@@ -204,7 +204,7 @@ def main():
             print(f'{start} -> {destination} : {path}')
             path = list(map(str, path))
             path_db = ','.join(path)
-            result = rsu_db.register_obu(rsu_id, start, path)
+            result = db.register_obu(rsu_id, start, path)
             print('register_obu result : ', result)
 
             #4.decide rsu and next rsu
@@ -215,10 +215,10 @@ def main():
                 rsu_id = next_rsu_id = path[now_idx]
             else :
                 rsu_id, next_rsu_id = path[now_idx + 1], path[now_idx + 2]
-            time_obu = db_obu.select_dis(rsu_id, next_rsu_id) 
-            rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
-            next_rsu_loc = db_obu.select_rsu_loc(next_rsu_id)
-            end_next_rsu_loc = db_obu.select_rsu_loc(end_next_rsu_id)
+            time_obu = db.select_dis(rsu_id, next_rsu_id) 
+            rsu_loc = db.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
+            next_rsu_loc = db.select_rsu_loc(next_rsu_id)
+            end_next_rsu_loc = db.select_rsu_loc(end_next_rsu_id)
             rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
             obu_loc = find_obu()
             next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
@@ -232,13 +232,13 @@ def main():
                 file.write(html_file)
             
             #6. delete obu info
-            result = rsu_db.delete_obu(start, 1)
+            result = db.delete_obu(start, 1)
             print('delete obu result : ', result)
 
         # 다음 경로 받는 함수(경우에 따라)
         if(time_obu != 0 and time.time() - start_time >= time_obu):
             #1. find obu info
-            select_obu = rsu_db.select_near_obu(rsu_id)
+            select_obu = db.select_near_obu(rsu_id)
             path_db = select_obu[0][1]
             path = path_db.split(',')
 
@@ -250,10 +250,10 @@ def main():
                 rsu_id = next_rsu_id = path[now_idx]
             else :
                 rsu_id, next_rsu_id = path[now_idx + 1], path[now_idx + 2]
-            time_obu = db_obu.select_dis(rsu_id, next_rsu_id) 
-            rsu_loc = db_obu.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
-            next_rsu_loc = db_obu.select_rsu_loc(next_rsu_id)
-            end_next_rsu_loc = db_obu.select_rsu_loc(end_next_rsu_id)
+            time_obu = db.select_dis(rsu_id, next_rsu_id) 
+            rsu_loc = db.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
+            next_rsu_loc = db.select_rsu_loc(next_rsu_id)
+            end_next_rsu_loc = db.select_rsu_loc(end_next_rsu_id)
             rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
             obu_loc = find_obu()
             next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
@@ -267,7 +267,7 @@ def main():
                 file.write(html_file)
             
             #4. delete obu info
-            result = rsu_db.delete_obu(start, 1)
+            result = db.delete_obu(start, 1)
             print('delete obu result : ', result)
 
         # 이상현상 감지 시 차 번호 인식 및 블러링
@@ -300,7 +300,7 @@ def main():
                     cloud_image_name = str(accident_type) + '/' + blurred_image_name
 
             # 4. insert into RSUState
-            result = rsu_db.insert_anomaly(str(rsu_id), start_rsu, end_rsu, accident_type, accident_size)
+            result = db.insert_anomaly(str(rsu_id), start_rsu, end_rsu, accident_type, accident_size)
             print('insert_anomaly result : ', result)
 
             # 5. change links weight
@@ -308,9 +308,9 @@ def main():
             astar.change_branch(nodes[start_rsu - 1], nodes[end_rsu - 1], traffic)
             
             # 6. send anomaly info to near rsu - mqtt publish(n/rsu/anomaly) #TODO
-            near_rsu = rsu_db.select_near_rsu(rsu) # select near rsu
+            near_rsu = db.select_near_rsu(rsu) # select near rsu
             for i in near_rsu :
-                rsu_db.insert_anomaly(str(i), start_rsu, end_rsu, accident_type, accident_size)
+                db.insert_anomaly(str(i), start_rsu, end_rsu, accident_type, accident_size)
             
             if(send_true == '1') :
                 url = cloud_upload_url + cloud_image_name
@@ -325,10 +325,10 @@ def main():
             end = end_rsu
             #print("=============rsu_list: %s ====== anomaly list: %s, %s" %(str(rsu_list), start, end))
             if(start in rsu_list or end in rsu_list):
-                link_loc = db_obu.find_link(start_rsu, end_rsu)
+                link_loc = db.find_link(start_rsu, end_rsu)
                 link_loc = str(link_loc[0])+', ' + str(link_loc[1])
-                start_loc = db_obu.select_rsu_loc(start)
-                end_loc = db_obu.select_rsu_loc(end)
+                start_loc = db.select_rsu_loc(start)
+                end_loc = db.select_rsu_loc(end)
                 start_loc = start_loc[0]+', ' + start_loc[1]
                 end_loc = end_loc[0]+', ' + end_loc[1]
                 data_next = [str(obu_loc), str(link_loc), str(0)] 

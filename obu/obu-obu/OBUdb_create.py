@@ -309,10 +309,11 @@ def insert_RSU(links) :# TEST
         cur = con.cursor()
         # insert obu db part
         cur.executemany("INSERT INTO RSU (start, end, start_latitude, start_longitude, end_latitude, end_longitude) VALUES (?, ?, ?, ?, ?, ?);", links)
+        con.commit()
         # inset rsu db part
-        near_rsu = near.keys
+        near_rsu = list(near.keys())
         for i in near_rsu:
-            rsu = near[i][1:-1] # 앞과 뒤에 []를 제거
+            rsu = str(near[i])[1:-1] # 앞과 뒤에 []를 제거
             cur.execute(f'INSERT INTO NearRSU (rsu_id, near_rsu) VALUES (?, ?);', (i, rsu)) 
         con.commit()
         print('insert_OBU success================')
