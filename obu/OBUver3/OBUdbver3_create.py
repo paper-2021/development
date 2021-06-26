@@ -1,6 +1,6 @@
 import sqlite3
 
-db_name = 'OBU_ver3.sqlite3'
+db_name = 'OBUver3.sqlite3'
 
 links = [(1, 2, '37.524', '127.053', '37.519', '127.056'),
 (2, 3, '37.519', '127.056', '37.514', '127.060'),

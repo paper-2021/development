@@ -156,8 +156,8 @@ time.sleep(2)
 
 
 
-start = 0 # CHECK
-destination = 0 # CHECK
+start = '24' # CHECK
+destination = '78' # CHECK
 obu_loc = 0
 rsu_loc = 0
 rsu_id = ''
@@ -193,14 +193,15 @@ def main():
             print("OBU/START =========================")
 
             #2. input start, destination
-            start= 0
-            destination = 0
+            start= '24'
+            destination = '78'
             rsu_id = start
             modify_js.init_map()
             modify_js.set_loc(db.select_rsu_loc(start), db.select_rsu_loc(destination)) #set start, end
             state = 'find_route'
 
             #3. find route
+            start, destination = int(start), int(destination)
             print("FIND ROUTE =========================")
             path = astar.find_path(nodes[start - 1], nodes[destination - 1])
             print(f'{start} -> {destination} : {path}')
@@ -310,21 +311,39 @@ def main():
             astar.change_branch(nodes[start_rsu - 1], nodes[end_rsu - 1], traffic)
             
             # 6. send anomaly info to near rsu - mqtt publish(n/rsu/anomaly) #TODO
-            near_rsu = db.select_near_rsu(rsu) # select near rsu
+            near_rsu = db.select_near_rsu(rsu_id) # select near rsu
             for i in near_rsu :
                 db.insert_anomaly(str(i), start_rsu, end_rsu, accident_type, accident_size)
-            
             if(send_true == '1') :
                 url = cloud_upload_url + cloud_image_name
             else :
                 url = '0'
+            
+            # 7. check anormaly table - if anormaly in path, recalculate path
+            path = path.split(',')
+            result = db.check_anomaly(rsu_id, path)
+            print('check_anomaly result : ', result)
+            if(result) : # path에 이상현상이 있으면 재탐색
+                print('!!!Anonmaly!!!')
+                now_idx = path.index(rsu_id)
+                next_rsu = path[now_idx + 1]
+                path_result = astar.find_path(nodes[int(rsu_id) - 1], nodes[path[-1] - 1])
+                print('re calculate path : ', path_result)
+            #insert into OBU
+            result = db.register_obu(rsu_id, payload['obu_id'], ','.join(path))
+            print('register_obu result : ', result)
+            # send obu info to next rsu - mqtt publish (obu/register)
+            now_idx = path.index(str(rsu_id))
+            if(now_idx == len(path) - 2) :
+                start = end = path[now_idx + 1]
+            elif(now_idx == len(path) - 1) :
+                start = end = path[now_idx]
+            else :
+                start, end = path[now_idx + 1], path[now_idx + 2]
 
-            # 7. show anomaly alarm
-
-            # 2.-1 현재 rsu와 다음 rsu 위치 구하기
+            # 8. show anomaly alarm
+            # 8.-1 현재 rsu와 다음 rsu 위치 구하기
             rsu_list = [str(rsu_id), str(next_rsu_id), str(end_next_rsu_id)]
-            start = start_rsu
-            end = end_rsu
             #print("=============rsu_list: %s ====== anomaly list: %s, %s" %(str(rsu_list), start, end))
             if(start in rsu_list or end in rsu_list):
                 link_loc = db.find_link(start_rsu, end_rsu)
@@ -336,7 +355,7 @@ def main():
                 data_next = [str(obu_loc), str(link_loc), str(0)] 
                 data_next.append(url)
                 data_next += [start_loc, end_loc]
-                # 2-2 modify js
+                # 8-2 modify js
                 html_file = modify_js.modify_html(True, data_next)
                 with open('obu/display/html/index.html', 'w') as file:
                     file.write(html_file)

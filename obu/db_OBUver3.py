@@ -190,3 +190,6 @@ def update_obu_path(rsu, obu, obu_path) :
         return False
     finally :
         conn.close()
+
+print(select_rsu_loc('24'))
+print(select_rsu_loc('78'))
