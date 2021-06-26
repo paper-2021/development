@@ -25,6 +25,19 @@ from rsu.pathfinding import call_astar as astar
 global nodes
 nodes = astar.call_astar()
 
+start = '24' # CHECK
+destination = '78' # CHECK
+obu_loc = 0
+rsu_loc = 0
+rsu_id = ''
+next_rsu_id = 0
+end_next_rsu_id = 0
+start_time = 0
+time_obu = 0
+state = ''
+cloud_upload_url = 'http://13.125.11.117:8000/upload/'
+payload = ''
+
 
 # Greengrass Iot device part
 AllowedActions = ['both', 'publish', 'subscribe']
@@ -34,8 +47,8 @@ parser = argparse.ArgumentParser()
 args = parser.parse_args()
 host = 'a2twdhxfhzmdtl-ats.iot.ap-northeast-2.amazonaws.com' #args.host
 rootCAPath = 'root-ca-cert.pem' #args.rootCAPath
-certificatePath = '8dc995a116.cert.pem' #args.certificatePath
-privateKeyPath = '8dc995a116.private.key' #args.privateKeyPath
+certificatePath = '983839d401.cert.pem' #args.certificatePath
+privateKeyPath = '983839d401.private.key' #args.privateKeyPath
 clientId = 'OBU' #args.thingName
 thingName = 'OBU' #args.thingName
 topic = 'obu/#' #args.topic
@@ -44,15 +57,16 @@ args.message = 'Start'
 
 def customOnMessage(message):
     global state
+    global payload
     subscribe_topic = message.topic
     payload = json.loads(message.payload)
     print(f'Received mqtt: ========================= {message.payload} {message.topic}')
     #이상현상 감시지
     if(message.topic == 'obu/trigger/anomaly'):
-        state = ('anomaly', payload)
+        state = 'anomaly'
+        payload= payload
     elif(subscribe_topic == 'obu/start'):
-            global state
-            state = 'start'
+        state = 'start'
 
 if args.mode not in AllowedActions:
     parser.error("Unknown --mode option %s. Must be one of %s" % (args.mode, str(AllowedActions)))
@@ -156,18 +170,6 @@ if args.mode == 'both' or args.mode == 'subscribe':
     myAWSIoTMQTTClient.subscribe(topic, 0, None)
 time.sleep(2)
 
-start = '24' # CHECK
-destination = '78' # CHECK
-obu_loc = 0
-rsu_loc = 0
-rsu_id = ''
-next_rsu_id = 0
-end_next_rsu_id = 0
-start_time = 0
-time_obu = 0
-state = ''
-cloud_upload_url = 'http://13.125.11.117:8000/upload/'
-
 def find_obu():
     global start_time
     global time_obu
@@ -179,7 +181,6 @@ def find_obu():
         return rsu_loc
 
 while(True):
-    global time_obu
     if(state == 'start'):
         #1.start find route
         print("OBU/START =========================")
@@ -268,7 +269,7 @@ while(True):
         print('delete obu result : ', result)
 
     # 이상현상 감지 시 차 번호 인식 및 블러링
-    if(state[1] == 'anomaly'):
+    if(state == 'anomaly'):
         print('START ANOMALY PART =========================')
         payload = state[1]
         start_rsu = payload['start_rsu']
@@ -355,5 +356,5 @@ while(True):
             html_file = modify_js.modify_html(True, data_next)
             with open('obu/display/html/index.html', 'w') as file:
                 file.write(html_file)
-                
+
     time.sleep(3)
