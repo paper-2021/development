@@ -29,6 +29,7 @@ start = '24' # CHECK
 destination = '78' # CHECK
 obu_loc = 0
 rsu_loc = 0
+obu_id  = 1
 rsu_id = ''
 next_rsu_id = 0
 end_next_rsu_id = 0
@@ -37,6 +38,7 @@ time_obu = 0
 state = ''
 cloud_upload_url = 'http://13.125.11.117:8000/upload/'
 payload = ''
+all_time = 0
 
 
 # Greengrass Iot device part
@@ -168,7 +170,6 @@ if not connected:
 # Successfully connected to the core
 if args.mode == 'both' or args.mode == 'subscribe':
     myAWSIoTMQTTClient.subscribe(topic, 0, None)
-time.sleep(2)
 
 def find_obu():
     global start_time
@@ -176,21 +177,27 @@ def find_obu():
     if rsu_id == '':
         return obu_loc
     if(time.time() - start_time >= time_obu):
-        time_obu = db.select_dis(rsu_id, next_rsu_id)*15
+        time_obu = db.select_dis(rsu_id, next_rsu_id)*30
         start_time = time.time()
         return rsu_loc
 
 while(True):
+    print("================================================")
+    if(rsu_id != '' and next_rsu_id != ''):
+        print("======================== Route: %s -> %s ========================" %(rsu_id, next_rsu_id))
     if(state == 'start'):
         #1.start find route
         print("OBU/START =========================")
-
+        all_time = time.time()
         #2. input start, destination
         rsu_id = start
         modify_js.init_map()
-        modify_js.set_loc(db.select_rsu_loc(start), db.select_rsu_loc(destination)) #set start, end
+        start_loc = db.select_rsu_loc(start)
+        start_loc = start_loc[0]+', ' + start_loc[1]
+        destination_loc = db.select_rsu_loc(destination)
+        modify_js.set_loc(start_loc, destination_loc) #set start, end
         state = 'find_route'
-        time.sleep(3)
+        time.sleep(8)
 
         #3. find route
         start, destination = int(start), int(destination)
@@ -199,17 +206,34 @@ while(True):
         print(f'{start} -> {destination} : {path}')
         path = list(map(str, path))
         path_db = ','.join(path)
-        result = db.register_obu(rsu_id, start, path)
-        print('register_obu result : ', result)
+        result = db.register_obu(rsu_id, obu_id, path_db)
+        print('Register_obu result : ', result)
 
         #4.decide rsu and next rsu
         now_idx = path.index(str(start))
         if(now_idx == len(path) - 2) :
-            rsu_id = next_rsu_id = path[now_idx + 1]
+            next_rsu_id = end_next_rsu_id = path[now_idx + 1]
         elif(now_idx == len(path) - 1) :
-            rsu_id = next_rsu_id = path[now_idx]
+            next_rsu_id = end_next_rsu_id = path[now_idx]
         else :
-            rsu_id, next_rsu_id = path[now_idx + 1], path[now_idx + 2]
+            next_rsu_id, end_next_rsu_id = path[now_idx + 1], path[now_idx + 2]
+        print(f'rsu_id: {rsu_id} -> next_rsu_id: {next_rsu_id} -> end_next_rsu_id: {end_next_rsu_id}') 
+
+        #5. save obu info to next rsu (obu, path)
+        #  check anormaly table - if anormaly in path, recalculate path
+        result = db.check_anomaly(next_rsu_id, path)
+        print('check_anomaly result : ', result)
+        if(result) : # path에 이상현상이 있으면 재탐색
+            print('!!!Anonmaly!!!')
+            now_idx = path.index(int(next_rsu_id))
+            next_rsu = path[now_idx + 1]
+            path_result = astar.find_path(nodes[rsu - 1], nodes[path[-1] - 1])
+            print('re calculate path : ', path_result)
+        # insert into OBU
+        result = db.register_obu(next_rsu_id, 1, ','.join(path[1:]))
+        print('register_obu result : ', result)
+        time.sleep(8)
+
         time_obu = db.select_dis(rsu_id, next_rsu_id) 
         rsu_loc = db.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
         next_rsu_loc = db.select_rsu_loc(next_rsu_id)
@@ -220,58 +244,16 @@ while(True):
         end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
         data_next = [str(rsu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
         obu_loc = rsu_loc
-        time.sleep(3)
-
-        #5. modify js
+        
+        #6. modify js
         html_file = modify_js.modify_html(False, data_next)
         with open('obu/display/html/index.html', 'w') as file:
             file.write(html_file)
-        
-        #6. delete obu info
-        result = db.delete_obu(start, 1)
-        print('delete obu result : ', result)
-        time.sleep(3)
-
-    # 다음 경로 받는 함수(경우에 따라)
-    if(time_obu != 0 and time.time() - start_time >= time_obu):
-        #1. find obu info
-        select_obu = db.select_near_obu(rsu_id)
-        path_db = select_obu[0][1]
-        path = path_db.split(',')
-
-        #2.decide rsu and next rsu
-        now_idx = path.index(str(start))
-        if(now_idx == len(path) - 2) :
-            rsu_id = next_rsu_id = path[now_idx + 1]
-        elif(now_idx == len(path) - 1) :
-            rsu_id = next_rsu_id = path[now_idx]
-        else :
-            rsu_id, next_rsu_id = path[now_idx + 1], path[now_idx + 2]
-        time_obu = db.select_dis(rsu_id, next_rsu_id) 
-        rsu_loc = db.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
-        next_rsu_loc = db.select_rsu_loc(next_rsu_id)
-        end_next_rsu_loc = db.select_rsu_loc(end_next_rsu_id)
-        rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
-        obu_loc = find_obu()
-        next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
-        end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
-        data_next = [str(rsu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
-        obu_loc = rsu_loc
-        time.sleep(3)
-
-        #3. modify js
-        html_file = modify_js.modify_html(False, data_next)
-        with open('obu/display/html/index.html', 'w') as file:
-            file.write(html_file)
-        
-        #4. delete obu info
-        result = db.delete_obu(start, 1)
-        print('delete obu result : ', result)
+        state = ''
 
     # 이상현상 감지 시 차 번호 인식 및 블러링
-    if(state == 'anomaly'):
+    elif(state == 'anomaly'):
         print('START ANOMALY PART =========================')
-        payload = state[1]
         start_rsu = payload['start_rsu']
         end_rsu = payload['end_rsu']
         accident_type = payload['accident_type']
@@ -282,7 +264,7 @@ while(True):
         print(f'start_rsu : {start_rsu}, end_rsu : {end_rsu}, accident_type : {accident_type}, accident_size : {accident_size}, image_name : {image_name}')
 
         # 1. detect license plate
-        if(send_true == '1') :
+        """if(send_true == '1') :
             locations = [[(686, 416, 802, 468)], [(967, 673, 1073, 705)], [(118.0, 258.0, 201.0, 290.0)]]
             loc = int(payload['loc'])
             
@@ -295,12 +277,14 @@ while(True):
             cloud_image_name = sendImage('/home/pi/obu' + '/blurring/' + str(accident_type) + '/' + blurred_image_name) # parameter : image name
             print('cloud_image_name : ', cloud_image_name)
             if(cloud_image_name == False) :
-                cloud_image_name = str(accident_type) + '/' + blurred_image_name
+                cloud_image_name = str(accident_type) + '/' + blurred_image_name"""
+        time.sleep(1)
+        cloud_image_name = ''
 
         # 4. insert into RSUState
         result = db.insert_anomaly(str(rsu_id), start_rsu, end_rsu, accident_type, accident_size)
         print('insert_anomaly result : ', result)
-        time.sleep(3)
+        time.sleep(8)
 
         # 5. change links weight
         traffic = 10
@@ -314,10 +298,10 @@ while(True):
             url = cloud_upload_url + cloud_image_name
         else :
             url = '0'
-        time.sleep(3)
+        time.sleep(8)
+        state = ''
 
         # 7. check anormaly table - if anormaly in path, recalculate path
-        path = path.split(',')
         result = db.check_anomaly(rsu_id, path)
         print('check_anomaly result : ', result)
         if(result) : # path에 이상현상이 있으면 재탐색
@@ -330,7 +314,15 @@ while(True):
         result = db.register_obu(rsu_id, payload['obu_id'], ','.join(path))
         print('register_obu result : ', result)
         # send obu info to next rsu - mqtt publish (obu/register)
-        now_idx = path.index(str(rsu_id))
+        now_idx = path.index(str(start))
+        if(now_idx == len(path) - 2) :
+            start = end = path[now_idx + 1]
+        elif(now_idx == len(path) - 1) :
+            start = end = path[now_idx]
+        else :
+            start, end = path[now_idx + 1], path[now_idx + 2]
+        
+        now_idx = path.index(str(end))
         if(now_idx == len(path) - 2) :
             start = end = path[now_idx + 1]
         elif(now_idx == len(path) - 1) :
@@ -357,4 +349,80 @@ while(True):
             with open('obu/display/html/index.html', 'w') as file:
                 file.write(html_file)
 
-    time.sleep(3)
+    # 다음 경로 받는 함수(경우에 따라)
+    elif(time_obu != 0 and time.time() - start_time >= time_obu):
+        print("======================== Start connect next link %s" %(next_rsu_id))
+        db.delete_obu(rsu_id, obu_id)
+        rsu_id = next_rsu_id
+        start_time = time.time()
+        
+        #1. find obu info
+        path_db = db.select_obu_path(rsu_id)
+        path = path_db.split(',')
+        if(len(path) ==1 and int(path[0]) == int(destination)):
+            print("============= Arrival =============")
+            rsu_loc = db.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
+            next_rsu_loc = db.select_rsu_loc(next_rsu_id)
+            end_next_rsu_loc = db.select_rsu_loc(end_next_rsu_id)
+            rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
+            next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
+            end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
+            data_next = [str(rsu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
+
+            #3. modify js
+            html_file = modify_js.modify_html(False, data_next)
+            with open('obu/display/html/index.html', 'w') as file:
+                file.write(html_file)
+            
+            #4. delete obu info
+            result = db.delete_obu(start, 1)
+            print('delete obu result : ', result)
+            print(f'All time : {time.time() - all_time}')
+            break
+
+        #2.decide rsu and next rsu
+        now_idx = path.index(str(next_rsu_id))
+        if(now_idx == len(path) - 2) :
+            next_rsu_id = end_next_rsu_id = path[now_idx + 1]
+        elif(now_idx == len(path) - 1) :
+            next_rsu_id = end_next_rsu_id = path[now_idx]
+        else :
+            next_rsu_id, end_next_rsu_id = path[now_idx + 1], path[now_idx + 2]
+        print(f'rsu_id: {rsu_id} -> next_rsu_id: {next_rsu_id} -> end_next_rsu_id: {end_next_rsu_id}') 
+        
+        #5. save obu info to next rsu (obu, path)
+        #  check anormaly table - if anormaly in path, recalculate path
+        result = db.check_anomaly(next_rsu_id, path)
+        print('check_anomaly result : ', result)
+        if(result) : # path에 이상현상이 있으면 재탐색
+            print('!!!Anonmaly!!!')
+            now_idx = path.index(int(next_rsu_id))
+            next_rsu = path[now_idx + 1]
+            path_result = astar.find_path(nodes[rsu - 1], nodes[path[-1] - 1])
+            print('re calculate path : ', path_result)
+        # insert into OBU
+        result = db.register_obu(next_rsu_id, 1, ','.join(path[1:]))
+        print('register_obu result : ', result)
+        time.sleep(8)
+
+        time_obu = db.select_dis(rsu_id, next_rsu_id) 
+        rsu_loc = db.select_rsu_loc(rsu_id) #(10)ex: '37.513, 127.053'
+        next_rsu_loc = db.select_rsu_loc(next_rsu_id)
+        end_next_rsu_loc = db.select_rsu_loc(end_next_rsu_id)
+        rsu_loc = rsu_loc[0]+', ' + rsu_loc[1]
+        obu_loc = find_obu()
+        next_rsu_loc = next_rsu_loc[0]+ ', '+next_rsu_loc[1]
+        end_next_rsu_loc = end_next_rsu_loc[0]+ ', '+end_next_rsu_loc[1]
+        data_next = [str(rsu_loc), str(rsu_loc), str(next_rsu_loc), str(end_next_rsu_loc)] 
+        obu_loc = rsu_loc
+
+        #3. modify js
+        html_file = modify_js.modify_html(False, data_next)
+        with open('obu/display/html/index.html', 'w') as file:
+            file.write(html_file)
+        
+        #4. delete obu info
+        result = db.delete_obu(start, 1)
+        print('delete obu result : ', result)
+
+    time.sleep(8)

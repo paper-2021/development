@@ -70,25 +70,21 @@ def insert_anomaly(rsu, start, end, accident_type, accident_size) :
         cur = conn.cursor()
         result = cur.execute("INSERT INTO RSUState (start_rsu, end_rsu, accident_type, accident_size) VALUES (%d, %d, %d, %d);" % (start, end, accident_type, accident_size))
         conn.commit()
-        conn.close()
+        conn.close
         return True
     except Exception as e :
         print('insert_anomaly error : ', e)
         return False
     finally :
-        conn.close()
+        conn.close
 
 def register_obu(rsu, obu_id, obu_path) :
     try :
-        path = './' + rsu + '/' + db_file
-        conn = sqlite3.connect(path)
+        conn = sqlite3.connect(db_file)
         cur = conn.cursor()
-        sql = "INSERT INTO OBU VALUES (?, ?);"
-        obu_id = int(obu_id)
-        result = cur.execute(sql, [obu_id, obu_path])
+        result = cur.execute("INSERT INTO OBU VALUES (?, ?, ?);", [rsu, obu_id, obu_path])
         # print('register_obu insert result : ', result)
         conn.commit()
-        conn.close()
         return True
     except Exception as e :
         print('register_obu error : ', e)
@@ -98,8 +94,7 @@ def register_obu(rsu, obu_id, obu_path) :
 
 def check_anomaly(rsu, obu_path) :
     try :
-        path = './' + rsu + '/' + db_file
-        conn = sqlite3.connect(path)
+        conn = sqlite3.connect(db_file)
         cur = conn.cursor()
         print('obu path : ', obu_path)
         # obu_path = obu_path.split(',')
@@ -125,8 +120,7 @@ def check_anomaly(rsu, obu_path) :
 
 def select_near_rsu(rsu) :
     try :
-        path = './' + rsu + '/' + db_file
-        conn = sqlite3.connect(path)
+        conn = sqlite3.connect(db_file)
         cur = conn.cursor()
         result = cur.execute("SELECT rsu_id FROM NearRSU;").fetchall()
         near = [x[0] for x in result]
@@ -140,8 +134,7 @@ def select_near_rsu(rsu) :
 
 def select_near_obu(rsu) :
     try :
-        path = './' + rsu + '/' + db_file
-        conn = sqlite3.connect(path)
+        conn = sqlite3.connect(db_file)
         cur = conn.cursor()
         result = cur.execute("SELECT obu_id, path FROM OBU WHERE obu_id = 1;").fetchall()
         print(result)
@@ -154,25 +147,9 @@ def select_near_obu(rsu) :
     finally :
         conn.close()
 
-def delete_obu(rsu, obu) :
-    try :
-        path = './' + rsu + '/' + db_file
-        conn = sqlite3.connect(path)
-        cur = conn.cursor()
-        obu = int(obu)
-        result = cur.execute("DELETE FROM OBU WHERE obu_id = (%d);" %(obu))
-        conn.close()
-        return True
-    except Exception as e :
-        print('delete obu e : ', e)
-        return False
-    finally :
-        conn.close()
-
 def update_obu_path(rsu, obu, obu_path) :
     try :
-        path = './' + rsu + '/' + db_file
-        conn = sqlite3.connect(path)
+        conn = sqlite3.connect(db_file)
         cur = conn.cursor()
         obu = int(obu)
         obu_path = list(map(str, obu_path))
@@ -187,6 +164,33 @@ def update_obu_path(rsu, obu, obu_path) :
         return True
     except Exception as e :
         print('update obu path e : ', e)
+        return False
+    finally :
+        conn.close()
+
+#new
+def select_obu_path(rsu_id):
+    try:
+        con = sqlite3.connect(db_file)
+        cur = con.cursor()
+        cur.execute("SELECT path from OBU where rsu_id=%s and obu_id=1" %(rsu_id))
+        return cur.fetchall()[0][0]
+    except Exception as e:
+        print(e)
+        print('Error ==== select_obu_path %s' %(rsu_id))
+    finally:
+        con.close
+
+def delete_obu(rsu, obu) :
+    try :
+        conn = sqlite3.connect(db_file)
+        cur = conn.cursor()
+        obu = int(obu)
+        result = cur.execute("DELETE FROM OBU WHERE rsu_id= %s and obu_id = %d;" %(rsu, obu))
+        conn.close()
+        return True
+    except Exception as e :
+        print('delete obu e : ', e)
         return False
     finally :
         conn.close()
