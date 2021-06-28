@@ -38,9 +38,10 @@ thingName = 'OBU' #args.thingName
 topic = 'obu/#' #args.topic
 args.mode = 'publish'
 args.message = 'Start'
+
 obu_id = 1
-destination = '78'
-obu_loc = '37.508, 127.037' # NOTE start obu 위치 여기 넣기
+destination = '9'
+obu_loc = '37.476, 126.981' # NOTE start obu 위치 여기 넣기
 publish_topic = []
 publish_msg = []
 rsu_id = ''
@@ -86,7 +87,7 @@ def customOnMessage(message):
         message['obu_id'] = obu_id
         # 1-1 obu location에서 담당하는 rsu_id 찾기
         obu_loc = find_obu() #ex: '37.518, 127.050'
-        rsu_id = db_obu.select_start(obu_loc) #ex: 9
+        rsu_id = 102 #ex: 9
         message['destination'] = destination # input 목적지 node
         modify_js.set_loc(obu_loc, db_obu.select_rsu_loc(destination)) #set start, end
         # 1-2 send mqtt

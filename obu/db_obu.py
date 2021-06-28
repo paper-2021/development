@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sqlite3
 from haversine import haversine
-db_name = 'obu.sqlite3'
+db_name = 'OBU_ver1.sqlite3'
 
 def select_start(obu_loc):
     try:
@@ -23,8 +23,12 @@ def select_rsu_loc(rsu_id):
         cur.execute("SELECT start_latitude, start_longitude from RSU where start=%s" %(rsu_id))
         return cur.fetchall()[0]
     except Exception as e:
-        print(e)
-        print('select_start failed %s' %(rsu_id))
+        try:
+            cur.execute("SELECT start_latitude, start_longitude from RSU where end=%s" %(rsu_id))
+            return cur.fetchall()[0]
+        except Exception as e:
+            print(e)
+            print('select_start failed %s' %(rsu_id))
     finally:
         con.close
 
@@ -63,5 +67,6 @@ def find_link(start, end):
         con.close
 
 
-print(select_rsu_loc('78'))
+print(select_rsu_loc('101'))
+print(select_rsu_loc('102'))
 #print(select_start('37.508, 127.037'))
